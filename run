@@ -1,0 +1,29 @@
+#!/bin/bash
+# Unified HMS stack runner: ensures MySQL and backend are up, builds if needed, and starts everything
+set -e
+
+cd "$(dirname "$0")"
+
+# Build images if not present
+if ! sudo docker images | grep -q hms-backend; then
+  echo "Building backend Docker image..."
+  sudo docker-compose build
+fi
+
+# Start all services (MySQL, backend) in detached mode
+sudo docker-compose up -d --build
+
+# Wait for backend to be healthy
+until curl -sf http://localhost:8080/actuator/health > /dev/null; do
+  echo "Waiting for backend to be healthy..."
+  sleep 3
+done
+
+echo "Backend is healthy. Starting frontend (Vite)..."
+cd frontend
+npm install
+npm run dev -- --port 3000 &
+cd ..
+
+echo "All services are up!"
+wait
