@@ -40,6 +40,9 @@ public class Appointment {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private String doctorName;
+
     public enum Status {
         SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
     }
@@ -65,4 +68,6 @@ public class Appointment {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getDoctorName() { return doctorName; }
+    public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
 }

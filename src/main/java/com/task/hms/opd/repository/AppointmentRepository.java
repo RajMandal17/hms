@@ -9,15 +9,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
-    List<Appointment> findByPatientId(String patientId);
-    List<Appointment> findByDoctorName(String doctorName);
-    Page<Appointment> findByDoctorNameContainingIgnoreCaseAndPatientId(String doctorName, String patientId, Pageable pageable);
-    Page<Appointment> findByDoctorNameContainingIgnoreCase(String doctorName, Pageable pageable);
-    Page<Appointment> findByPatientId(String patientId, Pageable pageable);
-    List<Appointment> findByAppointmentTimeBetween(LocalDateTime start, LocalDateTime end);
     List<Appointment> findByPatientId(Long patientId);
+    List<Appointment> findByDoctorName(String doctorName);
+    Page<Appointment> findByDoctorNameContainingIgnoreCaseAndPatientId(String doctorName, Long patientId, Pageable pageable);
+    Page<Appointment> findByDoctorNameContainingIgnoreCase(String doctorName, Pageable pageable);
+    Page<Appointment> findByPatientId(Long patientId, Pageable pageable);
+    List<Appointment> findByAppointmentTimeBetween(LocalDateTime start, LocalDateTime end);
     List<Appointment> findByDoctorId(Long doctorId);
     Page<Appointment> findByDoctorIdAndPatientId(Long doctorId, Long patientId, Pageable pageable);
     Page<Appointment> findByDoctorId(Long doctorId, Pageable pageable);
-    Page<Appointment> findByPatientId(Long patientId, Pageable pageable);
 }

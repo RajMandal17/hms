@@ -38,5 +38,17 @@ services:
       timeout: 10s
       retries: 5
 
+  frontend:
+    build: ./frontend
+    container_name: hms-frontend
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NODE_ENV=development
+    restart: always
+
 volumes:
   mysql_data:

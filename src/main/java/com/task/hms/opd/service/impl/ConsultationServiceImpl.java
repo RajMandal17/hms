@@ -38,7 +38,9 @@ public class ConsultationServiceImpl implements ConsultationService {
 
     @Override
     public List<Consultation> getConsultationsByPatientId(String patientId) {
-        List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
+        // Convert patientId to Long to match repository method
+        Long patientIdLong = Long.valueOf(patientId);
+        List<Appointment> appointments = appointmentRepository.findByPatientId(patientIdLong);
         List<Long> appointmentIds = appointments.stream().map(Appointment::getId).collect(Collectors.toList());
         return consultationRepository.findAll().stream()
                 .filter(c -> appointmentIds.contains(c.getAppointmentId()))
