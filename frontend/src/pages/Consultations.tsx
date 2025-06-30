@@ -30,6 +30,7 @@ import {
   Search,
   Visibility,
 } from '@mui/icons-material';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -60,10 +61,14 @@ export const Consultations: React.FC = () => {
   // Form state
   const [formData, setFormData] = useState({
     appointmentId: 0,
+    symptoms: '',
     diagnosis: '',
     prescription: '',
     notes: '',
     followUpDate: '',
+    medicines: [
+      { name: '', dose: '', frequency: '', duration: '' }
+    ],
   });
 
   const canEdit = hasAnyRole(['ADMIN', 'DOCTOR']);
@@ -80,8 +85,8 @@ export const Consultations: React.FC = () => {
   const loadInitialData = async () => {
     try {
       const appointmentsData = await appointmentService.getAppointments();
-      // Only show completed appointments for consultations
-      setAppointments(appointmentsData.filter(apt => apt.status === 'COMPLETED'));
+      // Show all appointments for consultations (remove COMPLETED filter)
+      setAppointments(appointmentsData);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load initial data');
     }
@@ -105,19 +110,25 @@ export const Consultations: React.FC = () => {
       setSelectedConsultation(consultation);
       setFormData({
         appointmentId: consultation.appointmentId,
+        symptoms: consultation.symptoms || '',
         diagnosis: consultation.diagnosis,
         prescription: consultation.prescription,
         notes: consultation.notes || '',
         followUpDate: consultation.followUpDate || '',
+        medicines: consultation.medicines || [{ name: '', dose: '', frequency: '', duration: '' }],
       });
     } else {
       setSelectedConsultation(null);
       setFormData({
         appointmentId: 0,
+        symptoms: '',
         diagnosis: '',
         prescription: '',
         notes: '',
         followUpDate: '',
+        medicines: [
+          { name: '', dose: '', frequency: '', duration: '' }
+        ],
       });
     }
     setIsEditing(mode === 'edit');
@@ -132,13 +143,32 @@ export const Consultations: React.FC = () => {
     setIsViewing(false);
   };
 
+  const handleMedicineChange = (idx: number, field: string, value: string) => {
+    const updated = [...formData.medicines];
+    updated[idx][field] = value;
+    setFormData({ ...formData, medicines: updated });
+  };
+
+  const handleAddMedicine = () => {
+    setFormData({ ...formData, medicines: [...formData.medicines, { name: '', dose: '', frequency: '', duration: '' }] });
+  };
+
+  const handleRemoveMedicine = (idx: number) => {
+    const updated = formData.medicines.filter((_, i) => i !== idx);
+    setFormData({ ...formData, medicines: updated });
+  };
+
   const handleSave = async () => {
     try {
+      const payload = {
+        ...formData,
+        medicines: formData.medicines.filter(med => med.name.trim() !== ''),
+      };
       if (selectedConsultation) {
-        await consultationService.updateConsultation(selectedConsultation.id, formData);
+        await consultationService.updateConsultation(selectedConsultation.id, payload);
         setSuccess('Consultation updated successfully');
       } else {
-        await consultationService.createConsultation(formData);
+        await consultationService.createConsultation(payload);
         setSuccess('Consultation created successfully');
       }
       handleCloseDialog();
@@ -188,7 +218,7 @@ export const Consultations: React.FC = () => {
         <Paper sx={{ mb: 3, p: 2 }}>
           <TextField
             fullWidth
-            placeholder="Search consultations..."
+            placeholder="Search consultations by Doctor Name .."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
@@ -205,66 +235,47 @@ export const Consultations: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Patient</TableCell>
-                <TableCell>Doctor</TableCell>
-                <TableCell>Date</TableCell>
+                <TableCell>Date/Time</TableCell>
+                <TableCell>Patient Name</TableCell>
+                <TableCell>Doctor Name</TableCell>
+                <TableCell>Symptoms</TableCell>
                 <TableCell>Diagnosis</TableCell>
+                <TableCell>Medicines</TableCell>
                 <TableCell>Follow-up</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {consultations.map((consultation) => (
-                <TableRow key={consultation.id}>
+              {(consultations || []).map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell>{c.consultationTime ? new Date(c.consultationTime).toLocaleString() : '-'}</TableCell>
+                  <TableCell>{c.patientName}</TableCell>
+                  <TableCell>{c.doctorName}</TableCell>
+                  <TableCell>{c.symptoms}</TableCell>
+                  <TableCell>{c.diagnosis}</TableCell>
+                  <TableCell>{(c.medicines && c.medicines.length > 0) ? c.medicines.map((m) => `${m.name}${m.dosage ? ` (${m.dosage})` : ''}${m.frequency ? `, Freq: ${m.frequency}` : ''}${m.duration ? `, Dur: ${m.duration}` : ''}`).join('; ') : '-'}</TableCell>
+                  <TableCell>{c.followUpDate ? c.followUpDate : '-'}</TableCell>
                   <TableCell>
-                    {consultation.appointment?.patient 
-                      ? `${consultation.appointment.patient.firstName} ${consultation.appointment.patient.lastName}`
-                      : 'Unknown Patient'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    {consultation.appointment?.doctor 
-                      ? `Dr. ${consultation.appointment.doctor.firstName} ${consultation.appointment.doctor.lastName}`
-                      : 'Unknown Doctor'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    {consultation.appointment
-                      ? new Date(consultation.appointment.appointmentDate).toLocaleDateString()
-                      : 'Unknown Date'
-                    }
-                  </TableCell>
-                  <TableCell>{consultation.diagnosis}</TableCell>
-                  <TableCell>
-                    {consultation.followUpDate 
-                      ? new Date(consultation.followUpDate).toLocaleDateString()
-                      : 'None'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog(consultation, 'view')}
-                    >
-                      <Visibility />
+                    <IconButton size="small" onClick={() => handleOpenDialog(c, 'view')}><Visibility /></IconButton>
+                    {canEdit && <IconButton size="small" onClick={() => handleOpenDialog(c, 'edit')}><Edit /></IconButton>}
+                    {canDelete && <IconButton size="small" onClick={() => handleDelete(c)} color="error"><Delete /></IconButton>}
+                    <IconButton size="small" color="primary" title="Download PDF" onClick={async () => {
+                      try {
+                        const blob = await consultationService.downloadPatientHistoryPdf(c.patientId);
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `consultation_${c.id}_patient_${c.patientId}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                      } catch (e) {
+                        alert('Failed to download PDF');
+                      }
+                    }}>
+                      <PictureAsPdfIcon />
                     </IconButton>
-                    {canEdit && (
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDialog(consultation, 'edit')}
-                      >
-                        <Edit />
-                      </IconButton>
-                    )}
-                    {canDelete && (
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(consultation)}
-                        color="error"
-                      >
-                        <Delete />
-                      </IconButton>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -292,12 +303,23 @@ export const Consultations: React.FC = () => {
                 <Autocomplete
                   options={appointments}
                   getOptionLabel={(option) => {
-                    const patientName = option.patient 
-                      ? `${option.patient.firstName} ${option.patient.lastName}`
-                      : 'Unknown Patient';
-                    const date = new Date(option.appointmentDate).toLocaleDateString();
-                    return `${patientName} - ${date}`;
+                    if (!option) return '';
+                    const patientName = option.patient && (option.patient.firstName || option.patient.name)
+                      ? option.patient.firstName
+                        ? `${option.patient.firstName} ${option.patient.lastName || ''}`.trim()
+                        : option.patient.name
+                      : `Unknown Patient (ID: ${option.patientId || option.id})`;
+                    const doctorName = option.doctor && (option.doctor.firstName || option.doctor.username)
+                      ? option.doctor.firstName
+                        ? `Dr. ${option.doctor.firstName} ${option.doctor.lastName || ''}`.trim()
+                        : `Dr. ${option.doctor.username}`
+                      : '';
+                    const date = option.appointmentDate
+                      ? new Date(option.appointmentDate).toLocaleDateString()
+                      : 'Unknown Date';
+                    return `${patientName}${doctorName ? ' / ' + doctorName : ''} - ${date}`;
                   }}
+                  isOptionEqualToValue={(option, value) => option && value && option.id === value.id}
                   value={appointments.find(a => a.id === formData.appointmentId) || null}
                   onChange={(event, newValue) => {
                     setFormData({ ...formData, appointmentId: newValue?.id || 0 });
@@ -306,6 +328,17 @@ export const Consultations: React.FC = () => {
                   renderInput={(params) => (
                     <TextField {...params} label="Appointment" fullWidth />
                   )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Symptoms"
+                  multiline
+                  rows={2}
+                  value={formData.symptoms}
+                  onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
+                  disabled={isViewing}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -322,13 +355,68 @@ export const Consultations: React.FC = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Prescription"
+                  label="Prescription (General Notes)"
                   multiline
-                  rows={4}
+                  rows={2}
                   value={formData.prescription}
                   onChange={(e) => setFormData({ ...formData, prescription: e.target.value })}
                   disabled={isViewing}
                 />
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>Medicines</Typography>
+                {formData.medicines.map((med, idx) => (
+                  <Grid container spacing={1} key={idx} alignItems="center" sx={{ mb: 1 }}>
+                    <Grid item xs={3}>
+                      <TextField
+                        label="Name"
+                        value={med.name}
+                        onChange={e => handleMedicineChange(idx, 'name', e.target.value)}
+                        disabled={isViewing}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={2}>
+                      <TextField
+                        label="Dose"
+                        value={med.dose}
+                        onChange={e => handleMedicineChange(idx, 'dose', e.target.value)}
+                        disabled={isViewing}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={3}>
+                      <TextField
+                        label="Frequency"
+                        value={med.frequency}
+                        onChange={e => handleMedicineChange(idx, 'frequency', e.target.value)}
+                        disabled={isViewing}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={2}>
+                      <TextField
+                        label="Duration"
+                        value={med.duration}
+                        onChange={e => handleMedicineChange(idx, 'duration', e.target.value)}
+                        disabled={isViewing}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={2}>
+                      {!isViewing && (
+                        <Button color="error" onClick={() => handleRemoveMedicine(idx)} disabled={formData.medicines.length === 1}>
+                          Remove
+                        </Button>
+                      )}
+                    </Grid>
+                  </Grid>
+                ))}
+                {!isViewing && (
+                  <Button variant="outlined" onClick={handleAddMedicine} sx={{ mt: 1 }}>
+                    Add Medicine
+                  </Button>
+                )}
               </Grid>
               <Grid item xs={12}>
                 <TextField

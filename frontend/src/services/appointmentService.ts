@@ -39,11 +39,6 @@ export class AppointmentService {
     const response = await apiService.get<ApiResponse<Appointment[]>>('/opd/appointments/search', { q: query });
     return response.data.data;
   }
-
-  async getTodayAppointments(): Promise<Appointment[]> {
-    const response = await apiService.get<ApiResponse<Appointment[]>>('/opd/appointments/today');
-    return response.data.data;
-  }
 }
 
 export const appointmentService = new AppointmentService();

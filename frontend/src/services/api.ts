@@ -48,6 +48,12 @@ class ApiService {
   }
 
   public post<T>(url: string, data?: any): Promise<AxiosResponse<T>> {
+    // If data is FormData, do not set Content-Type (let browser/axios handle it)
+    if (data instanceof FormData) {
+      return this.api.post(url, data, {
+        headers: { 'Content-Type': undefined }, // axios will remove the header
+      });
+    }
     return this.api.post(url, data);
   }
 

@@ -33,11 +33,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const token = authService.getToken();
     const savedUser = authService.getCurrentUser();
-    
+    console.log('AuthContext loaded user from localStorage:', savedUser);
+    console.log('AuthContext loaded token from localStorage:', token);
+    if (savedUser && !savedUser.role) {
+      alert('User loaded from localStorage has no role! Check backend login response and localStorage.');
+    }
     if (token && savedUser) {
       setUser(savedUser);
     }
-    
     setIsLoading(false);
   }, []);
 
@@ -53,11 +56,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const hasRole = (role: string): boolean => {
-    return user?.role === role;
+    if (user?.roles && Array.isArray(user.roles)) {
+      return user.roles.map((r: string) => r.toUpperCase()).includes(role.toUpperCase());
+    }
+    if (user?.role) {
+      return user.role.toUpperCase() === role.toUpperCase();
+    }
+    return false;
   };
 
   const hasAnyRole = (roles: string[]): boolean => {
-    return user ? roles.includes(user.role) : false;
+    if (user?.roles && Array.isArray(user.roles)) {
+      return user.roles.map((r: string) => r.toUpperCase()).some((ur: string) => roles.map(r => r.toUpperCase()).includes(ur));
+    }
+    if (user?.role) {
+      return roles.map(r => r.toUpperCase()).includes(user.role.toUpperCase());
+    }
+    return false;
   };
 
   const isAuthenticated = !!user;

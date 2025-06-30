@@ -13,6 +13,8 @@ import { Appointments } from './pages/Appointments';
 import { Consultations } from './pages/Consultations';
 import { Unauthorized } from './pages/Unauthorized';
 import { theme } from './theme/theme';
+import PatientHistoryList from './pages/PatientHistoryList';
+import PatientHistory from './pages/PatientHistory';
 
 function App() {
   return (
@@ -60,6 +62,26 @@ function App() {
                 <ProtectedRoute requiredRoles={['ADMIN', 'DOCTOR']}>
                   <AppLayout>
                     <Consultations />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/patient-history"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']}>
+                  <AppLayout>
+                    <PatientHistoryList />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/patient-history/:patientId"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']}>
+                  <AppLayout>
+                    <PatientHistory />
                   </AppLayout>
                 </ProtectedRoute>
               }

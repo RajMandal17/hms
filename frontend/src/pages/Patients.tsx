@@ -69,6 +69,8 @@ export const Patients: React.FC = () => {
     dateOfBirth: '',
     gender: 'MALE' as 'MALE' | 'FEMALE' | 'OTHER',
     emergencyContact: '',
+    age: '', // Add age field for backend compatibility
+    photo: null as File | null, // Add photo field for file upload
   });
 
   const canEdit = hasAnyRole(['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']);
@@ -103,6 +105,8 @@ export const Patients: React.FC = () => {
         dateOfBirth: patient.dateOfBirth,
         gender: patient.gender,
         emergencyContact: patient.emergencyContact,
+        age: patient.age, // Populate age from patient data
+        photo: null, // Reset photo on open
       });
     } else {
       setSelectedPatient(null);
@@ -115,6 +119,8 @@ export const Patients: React.FC = () => {
         dateOfBirth: '',
         gender: 'MALE',
         emergencyContact: '',
+        age: '',
+        photo: null,
       });
     }
     setIsEditing(mode === 'edit');
@@ -135,7 +141,16 @@ export const Patients: React.FC = () => {
         await patientService.updatePatient(selectedPatient.id, formData);
         setSuccess('Patient updated successfully');
       } else {
-        await patientService.createPatient(formData);
+        // Prepare FormData for multipart/form-data
+        const data = new FormData();
+        data.append('firstName', formData.firstName);
+        data.append('lastName', formData.lastName);
+        data.append('age', formData.age || '0');
+        data.append('gender', formData.gender);
+        data.append('phone', formData.phone);
+        data.append('address', formData.address);
+        if (formData.photo) data.append('photo', formData.photo);
+        await patientService.createPatient(data);
         setSuccess('Patient created successfully');
       }
       handleCloseDialog();
@@ -370,6 +385,38 @@ export const Patients: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
                   disabled={isViewing}
                 />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Age"
+                  type="number"
+                  value={formData.age}
+                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  disabled={isViewing}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  disabled={isViewing}
+                  sx={{ mb: 1 }}
+                >
+                  Upload Photo
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files && e.target.files[0];
+                      setFormData({ ...formData, photo: file || null });
+                    }}
+                  />
+                </Button>
+                {formData.photo && (
+                  <Typography variant="body2">Selected: {formData.photo.name}</Typography>
+                )}
               </Grid>
             </Grid>
           </DialogContent>

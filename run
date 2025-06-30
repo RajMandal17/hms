@@ -1,0 +1,23 @@
+#!/bin/bash
+# Unified HMS stack runner: ensures MySQL, backend, and frontend are up, builds if needed, and starts everything
+set -e
+
+cd "$(dirname "$0")"
+
+# Stop all running containers
+sudo docker-compose down
+
+# Build images for all services
+sudo docker-compose build
+
+# Start all services (MySQL, backend, frontend) in detached mode
+sudo docker-compose up -d
+
+# Wait for backend to be healthy
+until curl -sf http://localhost:8080/actuator/health > /dev/null; do
+  echo "Waiting for backend to be healthy..."
+  sleep 3
+done
+
+echo "Backend is healthy. Frontend and backend are running in Docker containers."
+echo "Access frontend at http://localhost:3000 and backend at http://localhost:8080"

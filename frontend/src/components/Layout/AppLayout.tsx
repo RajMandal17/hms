@@ -16,6 +16,13 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -25,27 +32,46 @@ import {
   Assignment,
   Logout,
   AccountCircle,
+  ExpandLess,
+  ExpandMore,
+  LocalHospital,
+  LocalPharmacy,
+  ReceiptLong,
+  History,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Activity } from 'lucide-react';
+import { RegisterPatientModal } from '../RegisterPatientModal';
+import { BookAppointmentModal } from '../BookAppointmentModal';
+import { AdmitPatientModal } from '../AdmitPatientModal';
+import { AddWardModal } from '../AddWardModal';
+import { AdmittedPatientsList } from '../AdmittedPatientsList';
+import { AddVitalsModal } from '../AddVitalsModal';
+import { AddDoctorRoundModal } from '../AddDoctorRoundModal';
 
 const drawerWidth = 240;
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  onPatientRegistered?: () => void;
+  onAppointmentBooked?: () => void;
 }
 
-const menuItems = [
-  { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
-  { text: 'Patients', icon: <People />, path: '/patients', roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
-  { text: 'Appointments', icon: <CalendarToday />, path: '/appointments', roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
-  { text: 'Consultations', icon: <Assignment />, path: '/consultations', roles: ['ADMIN', 'DOCTOR'] },
-];
-
-export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegistered, onAppointmentBooked }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [openOpd, setOpenOpd] = useState(false);
+  const [openRegister, setOpenRegister] = useState(false);
+  const [openBookAppointment, setOpenBookAppointment] = useState(false);
+  const [openPatientDialog, setOpenPatientDialog] = useState(false);
+  const [openIpd, setOpenIpd] = useState(false);
+  const [openAdmitPatient, setOpenAdmitPatient] = useState(false);
+  const [openAddWard, setOpenAddWard] = useState(false);
+  const [openAddVitals, setOpenAddVitals] = useState(false);
+  const [openAddDoctorRound, setOpenAddDoctorRound] = useState(false);
+  const [patientIdInput, setPatientIdInput] = useState('');
+  const [admitRefreshKey, setAdmitRefreshKey] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, hasAnyRole } = useAuth();
@@ -68,10 +94,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     handleMenuClose();
   };
 
-  const filteredMenuItems = menuItems.filter(item => 
-    hasAnyRole(item.roles)
-  );
-
+  // Sidebar with dropdowns
   const drawer = (
     <div>
       <Toolbar>
@@ -84,30 +107,122 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </Toolbar>
       <Divider />
       <List>
-        {filteredMenuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  '&:hover': {
-                    backgroundColor: 'primary.dark',
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: 'white',
-                  },
-                },
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+        {/* OPD Dropdown */}
+        <ListItem disablePadding>
+          <ListItemButton onClick={() => setOpenOpd(!openOpd)}>
+            <ListItemIcon>
+              <LocalHospital />
+            </ListItemIcon>
+            <ListItemText primary="OPD" />
+            {openOpd ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+        <Collapse in={openOpd} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenRegister(true)}>
+              <ListItemIcon><People /></ListItemIcon>
+              <ListItemText primary="Register Patient" />
             </ListItemButton>
-          </ListItem>
-        ))}
+            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenBookAppointment(true)} selected={location.pathname === '/appointments'}>
+              <ListItemIcon><CalendarToday /></ListItemIcon>
+              <ListItemText primary="Book Appointment" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/consultations')} selected={location.pathname === '/consultations'}>
+              <ListItemIcon><Assignment /></ListItemIcon>
+              <ListItemText primary="Consultation" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/patient-history')} selected={location.pathname.startsWith('/patient-history')}>
+              <ListItemIcon><History /></ListItemIcon>
+              <ListItemText primary="Patient History" />
+            </ListItemButton>
+          </List>
+        </Collapse>
+        {/* IPD Dropdown */}
+        <ListItem disablePadding>
+          <ListItemButton onClick={() => setOpenIpd(!openIpd)}>
+            <ListItemIcon>
+              <Assignment />
+            </ListItemIcon>
+            <ListItemText primary="IPD" />
+            {openIpd ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+        <Collapse in={openIpd} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAdmitPatient(true)}>
+              <ListItemIcon><People /></ListItemIcon>
+              <ListItemText primary="Admit Patient" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAddWard(true)}>
+              <ListItemIcon><Assignment /></ListItemIcon>
+              <ListItemText primary="Add Ward" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAddVitals(true)}>
+              <ListItemIcon><Assignment /></ListItemIcon>
+              <ListItemText primary="Add Vitals (Nurse)" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAddDoctorRound(true)}>
+              <ListItemIcon><Assignment /></ListItemIcon>
+              <ListItemText primary="Add Doctor Round (Doctor)" />
+            </ListItemButton>
+          </List>
+        </Collapse>
+        {/* Pharmacy Dropdown (placeholder) */}
+        <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon>
+              <LocalPharmacy />
+            </ListItemIcon>
+            <ListItemText primary="Pharmacy" />
+            <ExpandMore />
+          </ListItemButton>
+        </ListItem>
+        {/* Billing Dropdown (placeholder) */}
+        <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon>
+              <ReceiptLong />
+            </ListItemIcon>
+            <ListItemText primary="Billing" />
+            <ExpandMore />
+          </ListItemButton>
+        </ListItem>
       </List>
+      <RegisterPatientModal open={openRegister} onClose={() => setOpenRegister(false)} onSuccess={onPatientRegistered} />
+      <BookAppointmentModal open={openBookAppointment} onClose={() => setOpenBookAppointment(false)} onSuccess={onAppointmentBooked} />
+      <AdmitPatientModal open={openAdmitPatient} onClose={() => setOpenAdmitPatient(false)} onSuccess={() => setAdmitRefreshKey(k => k + 1)} />
+      <AddWardModal open={openAddWard} onClose={() => setOpenAddWard(false)} onSuccess={onPatientRegistered} />
+      <AddVitalsModal open={openAddVitals} onClose={() => setOpenAddVitals(false)} />
+      <AddDoctorRoundModal open={openAddDoctorRound} onClose={() => setOpenAddDoctorRound(false)} />
+      <Dialog open={openPatientDialog} onClose={() => setOpenPatientDialog(false)}>
+        <DialogTitle>Enter Patient ID</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Patient ID"
+            type="text"
+            fullWidth
+            value={patientIdInput}
+            onChange={e => setPatientIdInput(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenPatientDialog(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (patientIdInput.trim()) {
+                navigate(`/patient-history/${patientIdInput.trim()}`);
+                setOpenPatientDialog(false);
+                setPatientIdInput('');
+              }
+            }}
+            variant="contained"
+          >
+            View History
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 
@@ -214,6 +329,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           mt: 8,
         }}
       >
+        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+          {openIpd && <AdmittedPatientsList refreshKey={admitRefreshKey} />}
+        </Box>
         {children}
       </Box>
     </Box>

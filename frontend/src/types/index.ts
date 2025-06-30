@@ -2,10 +2,11 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  role: 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST';
-  firstName: string;
-  lastName: string;
-  createdAt: string;
+  role?: 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST';
+  roles?: string[];
+  firstName?: string;
+  lastName?: string;
+  createdAt?: string;
 }
 
 export interface LoginRequest {

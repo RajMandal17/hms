@@ -34,6 +34,7 @@ import {
   Delete,
   Search,
   Visibility,
+  History,
 } from '@mui/icons-material';
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -43,9 +44,11 @@ import { Appointment, Patient, User } from '../types';
 import { appointmentService } from '../services/appointmentService';
 import { patientService } from '../services/patientService';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export const Appointments: React.FC = () => {
   const { hasAnyRole, user } = useAuth();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [doctors, setDoctors] = useState<User[]>([]);
@@ -239,8 +242,12 @@ export const Appointments: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Patient</TableCell>
-                <TableCell>Doctor</TableCell>
+                <TableCell>Patient Name</TableCell>
+                <TableCell>Age</TableCell>
+                <TableCell>Gender</TableCell>
+                <TableCell>Contact</TableCell>
+                <TableCell>Doctor Name</TableCell>
+                <TableCell>Specialization</TableCell>
                 <TableCell>Date</TableCell>
                 <TableCell>Time</TableCell>
                 <TableCell>Status</TableCell>
@@ -249,59 +256,69 @@ export const Appointments: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {appointments.map((appointment) => (
-                <TableRow key={appointment.id}>
-                  <TableCell>
-                    {appointment.patient 
-                      ? `${appointment.patient.firstName} ${appointment.patient.lastName}`
-                      : 'Unknown Patient'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    {appointment.doctor 
-                      ? `Dr. ${appointment.doctor.firstName} ${appointment.doctor.lastName}`
-                      : 'Unknown Doctor'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    {new Date(appointment.appointmentDate).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{appointment.appointmentTime}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={appointment.status}
-                      color={getStatusColor(appointment.status) as any}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{appointment.reason}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog(appointment, 'view')}
-                    >
-                      <Visibility />
-                    </IconButton>
-                    {canEdit && (
+              {appointments.map((appointment) => {
+                const patient = appointment.patient || {};
+                const doctor = appointment.doctor || {};
+                return (
+                  <TableRow key={appointment.id}>
+                    <TableCell>
+                      {patient.firstName || ''} {patient.lastName || ''}
+                    </TableCell>
+                    <TableCell>{patient.age ?? '-'}</TableCell>
+                    <TableCell>{patient.gender || '-'}</TableCell>
+                    <TableCell>{patient.contactNumber || patient.phone || '-'}</TableCell>
+                    <TableCell>
+                      {doctor.firstName || doctor.lastName ? `Dr. ${doctor.firstName || ''} ${doctor.lastName || ''}` : 'Unknown Doctor'}
+                    </TableCell>
+                    <TableCell>{doctor.specialization || '-'}</TableCell>
+                    <TableCell>
+                      {appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleDateString() : '-'}
+                    </TableCell>
+                    <TableCell>{appointment.appointmentTime || '-'}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={appointment.status}
+                        color={getStatusColor(appointment.status) as any}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{appointment.reason || '-'}</TableCell>
+                    <TableCell>
                       <IconButton
                         size="small"
-                        onClick={() => handleOpenDialog(appointment, 'edit')}
+                        onClick={() => handleOpenDialog(appointment, 'view')}
                       >
-                        <Edit />
+                        <Visibility />
                       </IconButton>
-                    )}
-                    {canDelete && (
+                      {canEdit && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDialog(appointment, 'edit')}
+                        >
+                          <Edit />
+                        </IconButton>
+                      )}
+                      {canDelete && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(appointment)}
+                          color="error"
+                        >
+                          <Delete />
+                        </IconButton>
+                      )}
                       <IconButton
                         size="small"
-                        onClick={() => handleDelete(appointment)}
-                        color="error"
+                        color="primary"
+                        title="View Patient History"
+                        onClick={() => navigate(`/patient-history/${appointment.patientId}`)}
                       >
-                        <Delete />
+                        <History />
                       </IconButton>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           <TablePagination
