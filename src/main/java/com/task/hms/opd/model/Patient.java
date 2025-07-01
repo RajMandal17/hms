@@ -20,6 +20,8 @@ public class Patient {
     private String address;
     private String photoUrl;
     @Column(nullable = false, unique = true)
+    private String email;
+    @Column(nullable = false, unique = true)
     private String patientId;
 
     public Long getId() { return id; }
@@ -38,4 +40,7 @@ public class Patient {
     public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
     public String getPatientId() { return patientId; }
     public void setPatientId(String patientId) { this.patientId = patientId; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

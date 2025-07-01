@@ -138,7 +138,16 @@ export const Patients: React.FC = () => {
   const handleSave = async () => {
     try {
       if (selectedPatient) {
-        await patientService.updatePatient(selectedPatient.id, formData);
+        // Send updated patient data including email
+        await patientService.updatePatient(selectedPatient.id, {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          age: formData.age,
+          gender: formData.gender,
+          phone: formData.phone,
+          address: formData.address,
+          email: formData.email,
+        });
         setSuccess('Patient updated successfully');
       } else {
         // Prepare FormData for multipart/form-data
@@ -149,6 +158,7 @@ export const Patients: React.FC = () => {
         data.append('gender', formData.gender);
         data.append('phone', formData.phone);
         data.append('address', formData.address);
+        data.append('email', formData.email);
         if (formData.photo) data.append('photo', formData.photo);
         await patientService.createPatient(data);
         setSuccess('Patient created successfully');

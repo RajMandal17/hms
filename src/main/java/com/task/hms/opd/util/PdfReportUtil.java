@@ -3,10 +3,10 @@ package com.task.hms.opd.util;
 import com.task.hms.opd.dto.ConsultationResponseDTO;
 import com.task.hms.opd.dto.MedicineDTO;
 import com.task.hms.opd.model.Patient;
-import com.itextpdf.text.*;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.lowagie.text.*;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 

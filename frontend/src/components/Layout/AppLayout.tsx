@@ -70,6 +70,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
   const [openAddWard, setOpenAddWard] = useState(false);
   const [openAddVitals, setOpenAddVitals] = useState(false);
   const [openAddDoctorRound, setOpenAddDoctorRound] = useState(false);
+  const [openPharmacy, setOpenPharmacy] = useState(false);
+  const [openBilling, setOpenBilling] = useState(false);
   const [patientIdInput, setPatientIdInput] = useState('');
   const [admitRefreshKey, setAdmitRefreshKey] = useState(0);
   const navigate = useNavigate();
@@ -167,26 +169,55 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
             </ListItemButton>
           </List>
         </Collapse>
-        {/* Pharmacy Dropdown (placeholder) */}
+        {/* Pharmacy Dropdown */}
         <ListItem disablePadding>
-          <ListItemButton>
+          <ListItemButton onClick={() => setOpenPharmacy((prev) => !prev)}>
             <ListItemIcon>
               <LocalPharmacy />
             </ListItemIcon>
             <ListItemText primary="Pharmacy" />
-            <ExpandMore />
+            {openPharmacy ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
-        {/* Billing Dropdown (placeholder) */}
+        <Collapse in={openPharmacy} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/pharmacy/medicines')} selected={location.pathname.startsWith('/pharmacy/medicines')}>
+              <ListItemText primary="Medicines" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/pharmacy/batches')} selected={location.pathname.startsWith('/pharmacy/batches')}>
+              <ListItemText primary="Batches" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/pharmacy/sales')} selected={location.pathname.startsWith('/pharmacy/sales')}>
+              <ListItemText primary="Sales" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/pharmacy/returns')} selected={location.pathname.startsWith('/pharmacy/returns')}>
+              <ListItemText primary="Returns" />
+            </ListItemButton>
+          </List>
+        </Collapse>
+        {/* Billing Dropdown */}
         <ListItem disablePadding>
-          <ListItemButton>
+          <ListItemButton onClick={() => setOpenBilling((prev) => !prev)}>
             <ListItemIcon>
               <ReceiptLong />
             </ListItemIcon>
             <ListItemText primary="Billing" />
-            <ExpandMore />
+            {openBilling ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
+        <Collapse in={openBilling} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/billing')} selected={location.pathname === '/billing'}>
+              <ListItemText primary="All Bills" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/billing/payments')} selected={location.pathname.startsWith('/billing/payments')}>
+              <ListItemText primary="Payments" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/billing/insurance-claims')} selected={location.pathname.startsWith('/billing/insurance-claims')}>
+              <ListItemText primary="Insurance Claims" />
+            </ListItemButton>
+          </List>
+        </Collapse>
       </List>
       <RegisterPatientModal open={openRegister} onClose={() => setOpenRegister(false)} onSuccess={onPatientRegistered} />
       <BookAppointmentModal open={openBookAppointment} onClose={() => setOpenBookAppointment(false)} onSuccess={onAppointmentBooked} />

@@ -15,6 +15,13 @@ import { Unauthorized } from './pages/Unauthorized';
 import { theme } from './theme/theme';
 import PatientHistoryList from './pages/PatientHistoryList';
 import PatientHistory from './pages/PatientHistory';
+import Billing from './pages/Billing';
+import PharmacyMedicines from './pages/PharmacyMedicines';
+import PharmacyBatches from './pages/PharmacyBatches';
+import PharmacySales from './pages/PharmacySales';
+import PharmacyReturns from './pages/PharmacyReturns';
+import BillingPayments from './pages/BillingPayments';
+import BillingInsuranceClaims from './pages/BillingInsuranceClaims';
 
 function App() {
   return (
@@ -82,6 +89,78 @@ function App() {
                 <ProtectedRoute requiredRoles={['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']}>
                   <AppLayout>
                     <PatientHistory />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Pharmacy Module Routes */}
+            <Route
+              path="/pharmacy/medicines"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'PHARMACIST']}>
+                  <AppLayout>
+                    <PharmacyMedicines />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pharmacy/batches"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'PHARMACIST']}>
+                  <AppLayout>
+                    <PharmacyBatches />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pharmacy/sales"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'PHARMACIST']}>
+                  <AppLayout>
+                    <PharmacySales />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pharmacy/returns"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'PHARMACIST']}>
+                  <AppLayout>
+                    <PharmacyReturns />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Billing Module Routes */}
+            <Route
+              path="/billing"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT']}>
+                  <AppLayout>
+                    <Billing />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billing/payments"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'ACCOUNTANT']}>
+                  <AppLayout>
+                    <BillingPayments />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billing/insurance-claims"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'ACCOUNTANT']}>
+                  <AppLayout>
+                    <BillingInsuranceClaims />
                   </AppLayout>
                 </ProtectedRoute>
               }

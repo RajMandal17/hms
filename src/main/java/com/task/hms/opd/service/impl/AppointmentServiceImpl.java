@@ -1,4 +1,8 @@
+
 package com.task.hms.opd.service.impl;
+import com.task.hms.opd.model.Patient;
+import com.task.hms.opd.repository.PatientRepository;
+import com.task.hms.notification.NotificationService;
 
 import com.task.hms.opd.dto.AppointmentRequest;
 import com.task.hms.opd.model.Appointment;
@@ -21,6 +25,10 @@ public class AppointmentServiceImpl implements AppointmentService {
     private AppointmentRepository appointmentRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private PatientRepository patientRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     @Transactional
@@ -37,6 +45,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         User doctor = userRepository.findById(request.getDoctorId())
             .orElseThrow(() -> new RuntimeException("Doctor not found"));
         appointment.setDoctorName(doctor.getUsername()); // or use getFirstName() + " " + getLastName() if available
+        // Send email notification to patient (if email available)
+        patientRepository.findById(request.getPatientId()).ifPresent(patient -> {
+            String email = patient.getEmail();
+            if (email != null && email.contains("@")) {
+                String subject = "Appointment Confirmation - " + doctor.getUsername();
+                String text = "Dear " + patient.getName() + ",\n\nYour appointment with Dr. " + doctor.getUsername() +
+                        " is scheduled for " + request.getAppointmentDate() + " at " + request.getAppointmentTime() + ".\n\nThank you,\nHMS";
+                notificationService.sendEmail(email, subject, text);
+            }
+        });
         return appointmentRepository.save(appointment);
     }
 

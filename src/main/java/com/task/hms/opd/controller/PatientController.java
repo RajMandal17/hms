@@ -32,6 +32,7 @@ public class PatientController {
             @RequestParam("gender") String gender,
             @RequestParam("phone") String phone,
             @RequestParam("address") String address,
+            @RequestParam("email") String email,
             @RequestParam(value = "photo", required = false) MultipartFile photo
     ) throws Exception {
         System.out.println("firstName=" + firstName);
@@ -50,6 +51,7 @@ public class PatientController {
         request.setContact(phone);
         request.setAddress(address);
         request.setPhotoUrl(photoUrl);
+        request.setEmail(email);
         Patient patient = patientService.registerPatient(request);
         return ResponseEntity.ok(Map.of("data", patient));
     }

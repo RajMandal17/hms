@@ -23,6 +23,7 @@ export const RegisterPatientModal: React.FC<RegisterPatientModalProps> = ({ open
     gender: '',
     phone: '',
     address: '',
+    email: '',
     photo: null as File | null,
   });
   const [registerError, setRegisterError] = useState('');
@@ -49,6 +50,7 @@ export const RegisterPatientModal: React.FC<RegisterPatientModalProps> = ({ open
       formData.append('gender', registerData.gender);
       formData.append('phone', registerData.phone);
       formData.append('address', registerData.address);
+      formData.append('email', registerData.email);
       if (registerData.photo) {
         formData.append('photo', registerData.photo);
       }
@@ -120,6 +122,16 @@ export const RegisterPatientModal: React.FC<RegisterPatientModalProps> = ({ open
             label="Address"
             name="address"
             value={registerData.address}
+            onChange={handleRegisterChange}
+            fullWidth
+            margin="normal"
+            required
+          />
+          <TextField
+            label="Email"
+            name="email"
+            type="email"
+            value={registerData.email}
             onChange={handleRegisterChange}
             fullWidth
             margin="normal"

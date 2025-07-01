@@ -29,6 +29,7 @@ public class PatientServiceImpl implements PatientService {
         patient.setContact(request.getContact());
         patient.setAddress(request.getAddress());
         patient.setPhotoUrl(request.getPhotoUrl());
+        patient.setEmail(request.getEmail());
         patient.setPatientId("PAT-" + UUID.randomUUID().toString().substring(0, 8));
         return patientRepository.save(patient);
     }
@@ -53,6 +54,7 @@ public class PatientServiceImpl implements PatientService {
             patient.setContact(request.getContact());
             patient.setAddress(request.getAddress());
             patient.setPhotoUrl(request.getPhotoUrl());
+            patient.setEmail(request.getEmail());
             return patientRepository.save(patient);
         });
     }
