@@ -3,6 +3,7 @@ package com.task.hms.billing.service;
 import com.task.hms.billing.model.Bill;
 import com.task.hms.billing.model.Payment;
 import com.task.hms.billing.model.InsuranceClaim;
+import com.task.hms.billing.model.BillingSummary;
 import java.util.List;
 
 public interface BillService {
@@ -12,4 +13,6 @@ public interface BillService {
     InsuranceClaim claimInsurance(Long billId, InsuranceClaim claim);
     List<Bill> getAllBills();
     Bill addBillItem(Long billId, com.task.hms.billing.model.BillItem item);
+    List<Bill> getPendingBills();
+    BillingSummary getBillingSummary();
 }

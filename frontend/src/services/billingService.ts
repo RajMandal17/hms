@@ -1,3 +1,5 @@
+// Fetch pending bills (for billing alerts)
+export const getPendingBills = () => api.get('/billing/bills/pending');
 export const downloadBillPdf = (billId: number) => api.get(`/billing/bills/${billId}/pdf`, { responseType: 'blob' });
 import { apiService as api } from './api';
 

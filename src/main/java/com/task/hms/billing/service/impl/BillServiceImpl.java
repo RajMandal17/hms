@@ -1,8 +1,10 @@
+// Removed misplaced duplicate getPendingBills method at file top
 package com.task.hms.billing.service.impl;
 
 import com.task.hms.billing.model.Bill;
 import com.task.hms.billing.model.Payment;
 import com.task.hms.billing.model.InsuranceClaim;
+import com.task.hms.billing.model.BillingSummary;
 import com.task.hms.billing.repository.BillRepository;
 import com.task.hms.billing.repository.PaymentRepository;
 import com.task.hms.billing.repository.InsuranceClaimRepository;
@@ -22,6 +24,23 @@ public class BillServiceImpl implements BillService {
     private InsuranceClaimRepository insuranceClaimRepository;
     @Autowired
     private BillItemRepository billItemRepository;
+
+
+
+    @Override
+    public BillingSummary getBillingSummary() {
+        List<Bill> bills = billRepository.findAll();
+        double totalRevenue = bills.stream().mapToDouble(b -> b.getTotalAmount() != null ? b.getTotalAmount() : 0.0).sum();
+        double totalPaid = bills.stream().mapToDouble(b -> b.getPaidAmount() != null ? b.getPaidAmount() : 0.0).sum();
+        double totalUnpaid = totalRevenue - totalPaid;
+        int billCount = bills.size();
+        return new BillingSummary(totalRevenue, totalPaid, totalUnpaid, billCount);
+    }
+
+    @Override
+    public List<Bill> getPendingBills() {
+        return billRepository.findByStatus("PENDING");
+    }
 
     @Override
     public Bill createBill(Bill bill) {

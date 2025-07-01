@@ -1,4 +1,35 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+interface MedicineBatchAlert {
+  id: number;
+  batchNumber: string;
+  expiryDate: string;
+  quantity: number;
+  medicine: { name: string };
+}
+  const [lowStock, setLowStock] = useState<MedicineBatchAlert[]>([]);
+  const [expiring, setExpiring] = useState<MedicineBatchAlert[]>([]);
+  const [pharmacyLoading, setPharmacyLoading] = useState(false);
+  const [pharmacyError, setPharmacyError] = useState('');
+  useEffect(() => {
+    const fetchPharmacyAlerts = async () => {
+      try {
+        setPharmacyLoading(true);
+        setPharmacyError('');
+        const [lowStockRes, expiringRes] = await Promise.all([
+          axios.get('/api/pharmacy/batches/low-stock?threshold=10'),
+          axios.get('/api/pharmacy/batches/expiring?daysAhead=30'),
+        ]);
+        setLowStock(lowStockRes.data);
+        setExpiring(expiringRes.data);
+      } catch (err: any) {
+        setPharmacyError('Failed to load pharmacy alerts');
+      } finally {
+        setPharmacyLoading(false);
+      }
+    };
+    fetchPharmacyAlerts();
+  }, []);
 import {
   Box,
   Grid,
@@ -68,6 +99,45 @@ const StatCard: React.FC<{
           })}
         </Box>
       </Box>
+      {/* Pharmacy Alerts Section */}
+      <Grid container spacing={3} sx={{ mt: 3 }}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" color="error">Low Stock Medicines</Typography>
+              {pharmacyLoading ? <CircularProgress size={20} /> : null}
+              {pharmacyError && <Alert severity="error">{pharmacyError}</Alert>}
+              {lowStock.length === 0 && !pharmacyLoading ? (
+                <Typography>No low stock medicines.</Typography>
+              ) : (
+                lowStock.map(batch => (
+                  <Typography key={batch.id}>
+                    {batch.medicine.name} (Batch: {batch.batchNumber}) - Qty: {batch.quantity}
+                  </Typography>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" color="warning.main">Expiring Soon</Typography>
+              {pharmacyLoading ? <CircularProgress size={20} /> : null}
+              {pharmacyError && <Alert severity="error">{pharmacyError}</Alert>}
+              {expiring.length === 0 && !pharmacyLoading ? (
+                <Typography>No expiring batches.</Typography>
+              ) : (
+                expiring.map(batch => (
+                  <Typography key={batch.id}>
+                    {batch.medicine.name} (Batch: {batch.batchNumber}) - Expiry: {batch.expiryDate}
+                  </Typography>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </CardContent>
   </Card>
 );

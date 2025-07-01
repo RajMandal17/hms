@@ -1,4 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Alert, CircularProgress } from '@mui/material';
+// Types for pharmacy alerts
+interface MedicineBatchAlert {
+  id: number;
+  batchNumber: string;
+  expiryDate: string;
+  quantity: number;
+  medicine: { name: string };
+}
+// Types for billing alerts
+interface PendingBill {
+  id: number;
+  patientId: number;
+  totalAmount: number;
+  paidAmount: number;
+  status: string;
+}
+
+import { getPendingBills } from '../../services/billingService';
+
+// Pharmacy alert state
+const [lowStock, setLowStock] = useState<MedicineBatchAlert[]>([]);
+const [expiring, setExpiring] = useState<MedicineBatchAlert[]>([]);
+const [pharmacyLoading, setPharmacyLoading] = useState(false);
+const [pharmacyError, setPharmacyError] = useState('');
+// Billing alert state
+const [pendingBills, setPendingBills] = useState<PendingBill[]>([]);
+const [billingLoading, setBillingLoading] = useState(false);
+const [billingError, setBillingError] = useState('');
+
+useEffect(() => {
+  const fetchPharmacyAlerts = async () => {
+    try {
+      setPharmacyLoading(true);
+      setPharmacyError('');
+      const [lowStockRes, expiringRes] = await Promise.all([
+        axios.get('/api/pharmacy/batches/low-stock?threshold=10'),
+        axios.get('/api/pharmacy/batches/expiring?daysAhead=30'),
+      ]);
+      setLowStock(lowStockRes.data);
+      setExpiring(expiringRes.data);
+    } catch (err: any) {
+      setPharmacyError('Failed to load pharmacy alerts');
+    } finally {
+      setPharmacyLoading(false);
+    }
+  };
+  const fetchBillingAlerts = async () => {
+    try {
+      setBillingLoading(true);
+      setBillingError('');
+      const res = await getPendingBills();
+      setPendingBills(res.data);
+    } catch (err: any) {
+      setBillingError('Failed to load billing alerts');
+    } finally {
+      setBillingLoading(false);
+    }
+  };
+  fetchPharmacyAlerts();
+  fetchBillingAlerts();
+}, []);
 import {
   AppBar,
   Box,
@@ -363,6 +426,42 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
         <Box sx={{ maxWidth: 900, mx: 'auto' }}>
           {openIpd && <AdmittedPatientsList refreshKey={admitRefreshKey} />}
         </Box>
+        {/* In-app pharmacy alert banners */}
+        {pharmacyLoading && <CircularProgress size={20} sx={{ mb: 2 }} />}
+        {pharmacyError && <Alert severity="error" sx={{ mb: 2 }}>{pharmacyError}</Alert>}
+        {lowStock.length > 0 && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <strong>Low Stock Alert:</strong>
+            {lowStock.map(batch => (
+              <span key={batch.id} style={{ marginLeft: 8 }}>
+                {batch.medicine.name} (Batch: {batch.batchNumber}) - Qty: {batch.quantity}
+              </span>
+            ))}
+          </Alert>
+        )}
+        {expiring.length > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <strong>Expiring Soon:</strong>
+            {expiring.map(batch => (
+              <span key={batch.id} style={{ marginLeft: 8 }}>
+                {batch.medicine.name} (Batch: {batch.batchNumber}) - Expiry: {batch.expiryDate}
+              </span>
+            ))}
+          </Alert>
+        )}
+        {/* In-app billing alert banners */}
+        {billingLoading && <CircularProgress size={20} sx={{ mb: 2 }} />}
+        {billingError && <Alert severity="error" sx={{ mb: 2 }}>{billingError}</Alert>}
+        {pendingBills.length > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <strong>Pending Bills:</strong>
+            {pendingBills.map(bill => (
+              <span key={bill.id} style={{ marginLeft: 8 }}>
+                Bill #{bill.id} (Patient ID: {bill.patientId}) - Due: ₹{bill.totalAmount - (bill.paidAmount || 0)}
+              </span>
+            ))}
+          </Alert>
+        )}
         {children}
       </Box>
     </Box>

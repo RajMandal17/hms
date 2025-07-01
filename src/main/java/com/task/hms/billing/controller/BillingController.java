@@ -3,17 +3,29 @@ package com.task.hms.billing.controller;
 import com.task.hms.billing.model.Bill;
 import com.task.hms.billing.model.Payment;
 import com.task.hms.billing.model.InsuranceClaim;
+import com.task.hms.billing.model.BillingSummary;
 import com.task.hms.billing.service.BillService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/billing")
 public class BillingController {
     @Autowired
     private BillService billService;
+
+    @GetMapping("/summary")
+    public ResponseEntity<BillingSummary> getBillingSummary() {
+        return ResponseEntity.ok(billService.getBillingSummary());
+    }
+
+    @GetMapping("/bills/pending")
+    public ResponseEntity<List<Bill>> getPendingBills() {
+        return ResponseEntity.ok(billService.getPendingBills());
+    }
 
     @PostMapping("/bills")
     public ResponseEntity<Bill> createBill(@RequestBody Bill bill) {
