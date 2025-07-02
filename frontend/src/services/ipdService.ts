@@ -18,4 +18,10 @@ export const ipdService = {
   addWard: (data: any) => apiService.post('/ipd/wards', data).then((res: AxiosResponse<any>) => res.data),
   getAvailableBedsByWard: (wardId: string | number) =>
     apiService.get(`/ipd/beds/available`, { wardId }).then((res: AxiosResponse<any>) => res.data),
+
+  // Bed CRUD
+  addBed: (data: any) => apiService.post('/ipd/beds', data).then((res: AxiosResponse<any>) => res.data),
+  updateBed: (id: number, data: any) => apiService.put(`/ipd/beds/${id}`, data).then((res: AxiosResponse<any>) => res.data),
+  deleteBed: (id: number) => apiService.delete(`/ipd/beds/${id}`).then((res: AxiosResponse<any>) => res.data),
+  updateBedStatus: (id: number, status: string) => apiService.put(`/ipd/beds/${id}/status?status=${encodeURIComponent(status)}`).then((res: AxiosResponse<any>) => res.data),
 };

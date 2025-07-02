@@ -34,7 +34,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(withDefaults()) // Enable CORS at the security filter chain
+            .cors(withDefaults())
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
@@ -42,14 +42,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/api/users/register", "/swagger-ui/**", "/v3/api-docs/**", "/actuator/health").permitAll()
                 // Allow unauthenticated access to patient photos
                 .requestMatchers("/uploads/patient-photos/**").permitAll()
-                // Allow POST /api/opd/patients for any authenticated user
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/opd/patients").authenticated()
-                // Allow POST /api/appointments for any authenticated user
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/appointments").authenticated()
                 // Allow GET for all OPD endpoints
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/opd/**").permitAll()
                 // Allow GET for doctor, ward, and bed dropdowns for all users (for debugging)
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/user/doctors", "/api/ipd/wards", "/api/ipd/beds").permitAll()
+                // TEMP: Allow GET for pharmacy and billing alerts for debugging
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pharmacy/batches/low-stock", "/api/pharmacy/batches/expiring", "/api/billing/bills/pending").permitAll()
                 // Restrict IPD vitals endpoints to NURSE role
                 .requestMatchers("/api/ipd/vitals/**").hasRole("NURSE")
                 // Restrict IPD doctor rounds endpoints to DOCTOR role

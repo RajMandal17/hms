@@ -1,7 +1,8 @@
+import { apiService as api } from './api';
+
 // Fetch pending bills (for billing alerts)
 export const getPendingBills = () => api.get('/billing/bills/pending');
 export const downloadBillPdf = (billId: number) => api.get(`/billing/bills/${billId}/pdf`, { responseType: 'blob' });
-import { apiService as api } from './api';
 
 export interface Bill {
   id?: number;
@@ -40,9 +41,17 @@ export interface InsuranceClaim {
   status?: string;
 }
 
+export interface BillingSummary {
+  totalRevenue: number;
+  totalPaid: number;
+  totalUnpaid: number;
+  billCount: number;
+}
+
 export const createBill = (bill: Bill) => api.post('/billing/bills', bill);
 export const getBill = (id: number) => api.get(`/billing/bills/${id}`);
 export const getAllBills = () => api.get('/billing/bills');
 export const makePayment = (billId: number, payment: Payment) => api.post(`/billing/bills/${billId}/payment`, payment);
 export const claimInsurance = (billId: number, claim: InsuranceClaim) => api.post(`/billing/bills/${billId}/insurance-claim`, claim);
 export const addBillItem = (billId: number, item: BillItem) => api.post(`/billing/bills/${billId}/items`, item);
+export const getBillingSummary = () => api.get<BillingSummary>('/billing/summary');

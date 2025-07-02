@@ -1,4 +1,3 @@
-
 package com.task.hms.opd.service.impl;
 import com.task.hms.opd.model.Patient;
 import com.task.hms.opd.repository.PatientRepository;
@@ -45,14 +44,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         User doctor = userRepository.findById(request.getDoctorId())
             .orElseThrow(() -> new RuntimeException("Doctor not found"));
         appointment.setDoctorName(doctor.getUsername()); // or use getFirstName() + " " + getLastName() if available
-        // Send email notification to patient (if email available)
+        // Send email and SMS notification to patient (if available)
         patientRepository.findById(request.getPatientId()).ifPresent(patient -> {
             String email = patient.getEmail();
+            String contact = patient.getContact();
+            String subject = "Appointment Confirmation - " + doctor.getUsername();
+            String text = "Dear " + patient.getName() + ",\n\nYour appointment with Dr. " + doctor.getUsername() +
+                    " is scheduled for " + request.getAppointmentDate() + " at " + request.getAppointmentTime() + ".\n\nThank you,\nHMS";
             if (email != null && email.contains("@")) {
-                String subject = "Appointment Confirmation - " + doctor.getUsername();
-                String text = "Dear " + patient.getName() + ",\n\nYour appointment with Dr. " + doctor.getUsername() +
-                        " is scheduled for " + request.getAppointmentDate() + " at " + request.getAppointmentTime() + ".\n\nThank you,\nHMS";
                 notificationService.sendEmail(email, subject, text);
+            }
+            if (contact != null && contact.matches("[0-9+]{8,}")) {
+                notificationService.sendSms(contact, text);
             }
         });
         return appointmentRepository.save(appointment);

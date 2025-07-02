@@ -19,49 +19,6 @@ interface PendingBill {
 }
 
 import { getPendingBills } from '../../services/billingService';
-
-// Pharmacy alert state
-const [lowStock, setLowStock] = useState<MedicineBatchAlert[]>([]);
-const [expiring, setExpiring] = useState<MedicineBatchAlert[]>([]);
-const [pharmacyLoading, setPharmacyLoading] = useState(false);
-const [pharmacyError, setPharmacyError] = useState('');
-// Billing alert state
-const [pendingBills, setPendingBills] = useState<PendingBill[]>([]);
-const [billingLoading, setBillingLoading] = useState(false);
-const [billingError, setBillingError] = useState('');
-
-useEffect(() => {
-  const fetchPharmacyAlerts = async () => {
-    try {
-      setPharmacyLoading(true);
-      setPharmacyError('');
-      const [lowStockRes, expiringRes] = await Promise.all([
-        axios.get('/api/pharmacy/batches/low-stock?threshold=10'),
-        axios.get('/api/pharmacy/batches/expiring?daysAhead=30'),
-      ]);
-      setLowStock(lowStockRes.data);
-      setExpiring(expiringRes.data);
-    } catch (err: any) {
-      setPharmacyError('Failed to load pharmacy alerts');
-    } finally {
-      setPharmacyLoading(false);
-    }
-  };
-  const fetchBillingAlerts = async () => {
-    try {
-      setBillingLoading(true);
-      setBillingError('');
-      const res = await getPendingBills();
-      setPendingBills(res.data);
-    } catch (err: any) {
-      setBillingError('Failed to load billing alerts');
-    } finally {
-      setBillingLoading(false);
-    }
-  };
-  fetchPharmacyAlerts();
-  fetchBillingAlerts();
-}, []);
 import {
   AppBar,
   Box,
@@ -115,6 +72,7 @@ import { AddDoctorRoundModal } from '../AddDoctorRoundModal';
 
 const drawerWidth = 240;
 
+
 interface AppLayoutProps {
   children: React.ReactNode;
   onPatientRegistered?: () => void;
@@ -122,6 +80,49 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegistered, onAppointmentBooked }) => {
+  // Pharmacy alert state
+  const [lowStock, setLowStock] = useState<MedicineBatchAlert[]>([]);
+  const [expiring, setExpiring] = useState<MedicineBatchAlert[]>([]);
+  const [pharmacyLoading, setPharmacyLoading] = useState(false);
+  const [pharmacyError, setPharmacyError] = useState('');
+  // Billing alert state
+  const [pendingBills, setPendingBills] = useState<PendingBill[]>([]);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState('');
+
+  useEffect(() => {
+    const fetchPharmacyAlerts = async () => {
+      try {
+        setPharmacyLoading(true);
+        setPharmacyError('');
+        const [lowStockRes, expiringRes] = await Promise.all([
+          axios.get('/api/pharmacy/batches/low-stock?threshold=10'),
+          axios.get('/api/pharmacy/batches/expiring?daysAhead=30'),
+        ]);
+        setLowStock(lowStockRes.data);
+        setExpiring(expiringRes.data);
+      } catch (err: any) {
+        setPharmacyError('Failed to load pharmacy alerts');
+      } finally {
+        setPharmacyLoading(false);
+      }
+    };
+    const fetchBillingAlerts = async () => {
+      try {
+        setBillingLoading(true);
+        setBillingError('');
+        const res = await getPendingBills();
+        setPendingBills(res.data);
+      } catch (err: any) {
+        setBillingError('Failed to load billing alerts');
+      } finally {
+        setBillingLoading(false);
+      }
+    };
+    fetchPharmacyAlerts();
+    fetchBillingAlerts();
+  }, []);
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openOpd, setOpenOpd] = useState(false);
@@ -229,6 +230,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
             <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAddDoctorRound(true)}>
               <ListItemIcon><Assignment /></ListItemIcon>
               <ListItemText primary="Add Doctor Round (Doctor)" />
+            </ListItemButton>
+            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/ipd/beds')} selected={location.pathname === '/ipd/beds'}>
+              <ListItemIcon><Assignment /></ListItemIcon>
+              <ListItemText primary="IPD Beds" />
             </ListItemButton>
           </List>
         </Collapse>

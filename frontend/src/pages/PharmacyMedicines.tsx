@@ -1,9 +1,16 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { getMedicines, addMedicine, updateMedicine, deleteMedicine, Medicine } from '../services/pharmacyService';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, CircularProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+
+
+// ...existing imports...
+
+// Only one PharmacyMedicines component should exist!
+const PharmacyMedicines: React.FC = () => {
   // Edit state
   const [openEdit, setOpenEdit] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -21,64 +28,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const handleEditOpen = (med: Medicine) => {
-    setEditForm({
-      id: med.id,
-      name: med.name,
-      category: med.category,
-      manufacturer: med.manufacturer,
-      stock: String(med.stock),
-      expiryDate: med.expiryDate,
-    });
-    setEditError(null);
-    setOpenEdit(true);
-  };
 
-  const handleEditClose = () => {
-    setOpenEdit(false);
-    setEditError(null);
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-
-  const handleEditSubmit = async () => {
-    setEditLoading(true);
-    setEditError(null);
-    try {
-      const updated = await updateMedicine(editForm.id, {
-        name: editForm.name,
-        category: editForm.category,
-        manufacturer: editForm.manufacturer,
-        stock: Number(editForm.stock),
-        expiryDate: editForm.expiryDate,
-      });
-      setMedicines((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
-      setOpenEdit(false);
-    } catch (err) {
-      setEditError('Failed to update medicine');
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    setDeleteId(id);
-    setDeleteLoading(true);
-    setDeleteError(null);
-    try {
-      await deleteMedicine(id);
-      setMedicines((prev) => prev.filter((m) => m.id !== id));
-      setDeleteId(null);
-    } catch (err) {
-      setDeleteError('Failed to delete medicine');
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-const PharmacyMedicines: React.FC = () => {
+  // Medicines state
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +43,8 @@ const PharmacyMedicines: React.FC = () => {
   });
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+
+  // ...existing handlers (handleEditOpen, handleEditClose, etc.)...
 
   useEffect(() => {
     setLoading(true);

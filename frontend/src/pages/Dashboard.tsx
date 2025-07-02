@@ -1,35 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-interface MedicineBatchAlert {
-  id: number;
-  batchNumber: string;
-  expiryDate: string;
-  quantity: number;
-  medicine: { name: string };
-}
-  const [lowStock, setLowStock] = useState<MedicineBatchAlert[]>([]);
-  const [expiring, setExpiring] = useState<MedicineBatchAlert[]>([]);
-  const [pharmacyLoading, setPharmacyLoading] = useState(false);
-  const [pharmacyError, setPharmacyError] = useState('');
-  useEffect(() => {
-    const fetchPharmacyAlerts = async () => {
-      try {
-        setPharmacyLoading(true);
-        setPharmacyError('');
-        const [lowStockRes, expiringRes] = await Promise.all([
-          axios.get('/api/pharmacy/batches/low-stock?threshold=10'),
-          axios.get('/api/pharmacy/batches/expiring?daysAhead=30'),
-        ]);
-        setLowStock(lowStockRes.data);
-        setExpiring(expiringRes.data);
-      } catch (err: any) {
-        setPharmacyError('Failed to load pharmacy alerts');
-      } finally {
-        setPharmacyLoading(false);
-      }
-    };
-    fetchPharmacyAlerts();
-  }, []);
 import {
   Box,
   Grid,
@@ -57,9 +27,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { patientService } from '../services/patientService';
 import { appointmentService } from '../services/appointmentService';
 import { consultationService } from '../services/consultationService';
+import { getBillingSummary, BillingSummary } from '../services/billingService';
 import { Appointment } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '../components/Layout/AppLayout';
+
+interface MedicineBatchAlert {
+  id: number;
+  batchNumber: string;
+  expiryDate: string;
+  quantity: number;
+  medicine: { name: string };
+}
 
 interface DashboardStats {
   totalPatients: number;
@@ -99,50 +78,55 @@ const StatCard: React.FC<{
           })}
         </Box>
       </Box>
-      {/* Pharmacy Alerts Section */}
-      <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" color="error">Low Stock Medicines</Typography>
-              {pharmacyLoading ? <CircularProgress size={20} /> : null}
-              {pharmacyError && <Alert severity="error">{pharmacyError}</Alert>}
-              {lowStock.length === 0 && !pharmacyLoading ? (
-                <Typography>No low stock medicines.</Typography>
-              ) : (
-                lowStock.map(batch => (
-                  <Typography key={batch.id}>
-                    {batch.medicine.name} (Batch: {batch.batchNumber}) - Qty: {batch.quantity}
-                  </Typography>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" color="warning.main">Expiring Soon</Typography>
-              {pharmacyLoading ? <CircularProgress size={20} /> : null}
-              {pharmacyError && <Alert severity="error">{pharmacyError}</Alert>}
-              {expiring.length === 0 && !pharmacyLoading ? (
-                <Typography>No expiring batches.</Typography>
-              ) : (
-                expiring.map(batch => (
-                  <Typography key={batch.id}>
-                    {batch.medicine.name} (Batch: {batch.batchNumber}) - Expiry: {batch.expiryDate}
-                  </Typography>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
     </CardContent>
   </Card>
 );
 
 export const Dashboard: React.FC = () => {
+  // ...existing code...
+  // ...state declarations...
+
+  // Declare after all state variables are defined
+  const pharmacyAlertsSection = (
+    <Grid container spacing={3} sx={{ mt: 3 }}>
+      <Grid item xs={12} md={6}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" color="error">Low Stock Medicines</Typography>
+            {pharmacyLoading ? <CircularProgress size={20} /> : null}
+            {pharmacyError && <Alert severity="error">{pharmacyError}</Alert>}
+            {lowStock.length === 0 && !pharmacyLoading ? (
+              <Typography>No low stock medicines.</Typography>
+            ) : (
+              lowStock.map(batch => (
+                <Typography key={batch.id}>
+                  {batch.medicine.name} (Batch: {batch.batchNumber}) - Qty: {batch.quantity}
+                </Typography>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" color="warning.main">Expiring Soon</Typography>
+            {pharmacyLoading ? <CircularProgress size={20} /> : null}
+            {pharmacyError && <Alert severity="error">{pharmacyError}</Alert>}
+            {expiring.length === 0 && !pharmacyLoading ? (
+              <Typography>No expiring batches.</Typography>
+            ) : (
+              expiring.map(batch => (
+                <Typography key={batch.id}>
+                  {batch.medicine.name} (Batch: {batch.batchNumber}) - Expiry: {batch.expiryDate}
+                </Typography>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid>
+  );
   const { user } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
@@ -168,9 +152,14 @@ export const Dashboard: React.FC = () => {
   });
   const [registerError, setRegisterError] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
+  // (moved up)
+  const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
+  const [billingSummaryLoading, setBillingSummaryLoading] = useState(false);
+  const [billingSummaryError, setBillingSummaryError] = useState('');
 
   useEffect(() => {
     loadDashboardData();
+    fetchBillingSummary();
   }, []);
 
   const loadDashboardData = async () => {
@@ -200,6 +189,19 @@ export const Dashboard: React.FC = () => {
       setError(err.response?.data?.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBillingSummary = async () => {
+    try {
+      setBillingSummaryLoading(true);
+      setBillingSummaryError('');
+      const res = await getBillingSummary();
+      setBillingSummary(res.data);
+    } catch (err: any) {
+      setBillingSummaryError('Failed to load billing summary');
+    } finally {
+      setBillingSummaryLoading(false);
     }
   };
 
@@ -394,7 +396,34 @@ export const Dashboard: React.FC = () => {
               color="#ed6c02"
             />
           </Grid>
+          {/* Billing Analytics Widgets */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom variant="h6">
+                  Billing Summary
+                </Typography>
+                {billingSummaryLoading ? (
+                  <CircularProgress size={20} />
+                ) : billingSummaryError ? (
+                  <Alert severity="error">{billingSummaryError}</Alert>
+                ) : billingSummary ? (
+                  <>
+                    <Typography variant="body2">Total Revenue: <strong>₹{billingSummary.totalRevenue.toFixed(2)}</strong></Typography>
+                    <Typography variant="body2">Total Paid: <strong>₹{billingSummary.totalPaid.toFixed(2)}</strong></Typography>
+                    <Typography variant="body2">Total Unpaid: <strong>₹{billingSummary.totalUnpaid.toFixed(2)}</strong></Typography>
+                    <Typography variant="body2">Bill Count: <strong>{billingSummary.billCount}</strong></Typography>
+                  </>
+                ) : (
+                  <Typography>No billing data.</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
+
+        {/* Pharmacy Alerts Section (below stats) */}
+        {pharmacyAlertsSection}
 
         <Grid container spacing={3} sx={{ mt: 3 }}>
           <Grid item xs={12} md={8}>

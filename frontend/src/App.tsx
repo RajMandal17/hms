@@ -22,13 +22,15 @@ import PharmacySales from './pages/PharmacySales';
 import PharmacyReturns from './pages/PharmacyReturns';
 import BillingPayments from './pages/BillingPayments';
 import BillingInsuranceClaims from './pages/BillingInsuranceClaims';
+import { IPDBeds } from './pages/IPDBeds';
+import { BrowserRouter } from 'react-router-dom';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -165,9 +167,19 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/ipd/beds"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'NURSE', 'RECEPTIONIST']}>
+                  <AppLayout>
+                    <IPDBeds />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-        </Router>
+        </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
   );

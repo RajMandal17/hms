@@ -1,3 +1,4 @@
+
 package com.task.hms.opd.model;
 
 import jakarta.persistence.*;
@@ -40,8 +41,12 @@ public class Appointment {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+
     @Column(nullable = false)
     private String doctorName;
+
+    @Column(nullable = false)
+    private boolean reminderSent = false;
 
     public enum Status {
         SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
@@ -70,4 +75,6 @@ public class Appointment {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public String getDoctorName() { return doctorName; }
     public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
+    public boolean isReminderSent() { return reminderSent; }
+    public void setReminderSent(boolean reminderSent) { this.reminderSent = reminderSent; }
 }

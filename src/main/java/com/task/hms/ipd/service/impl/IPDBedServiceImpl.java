@@ -26,6 +26,29 @@ public class IPDBedServiceImpl implements IPDBedService {
     }
 
     @Override
+    public IPDBedDTO createBed(IPDBedDTO bedDTO) {
+        IPDBed bed = mapToEntity(bedDTO);
+        bed = bedRepository.save(bed);
+        return mapToDTO(bed);
+    }
+
+    @Override
+    public IPDBedDTO updateBed(Long id, IPDBedDTO bedDTO) {
+        return bedRepository.findById(id).map(bed -> {
+            bed.setWardId(bedDTO.getWardId());
+            bed.setBedNumber(bedDTO.getBedNumber());
+            bed.setStatus(bedDTO.getStatus());
+            bedRepository.save(bed);
+            return mapToDTO(bed);
+        }).orElse(null);
+    }
+
+    @Override
+    public void deleteBed(Long id) {
+        bedRepository.deleteById(id);
+    }
+
+    @Override
     public IPDBedDTO updateBedStatus(Long id, String status) {
         return bedRepository.findById(id).map(bed -> {
             bed.setStatus(BedStatus.valueOf(status));
@@ -49,5 +72,14 @@ public class IPDBedServiceImpl implements IPDBedService {
         dto.setBedNumber(bed.getBedNumber());
         dto.setStatus(bed.getStatus());
         return dto;
+    }
+
+    private IPDBed mapToEntity(IPDBedDTO dto) {
+        IPDBed bed = new IPDBed();
+        bed.setId(dto.getId());
+        bed.setWardId(dto.getWardId());
+        bed.setBedNumber(dto.getBedNumber());
+        bed.setStatus(dto.getStatus());
+        return bed;
     }
 }

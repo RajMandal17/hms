@@ -65,11 +65,19 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
     }
 
     @Override
+    @Transactional
     public void dischargePatient(Long id) {
         admissionRepository.findById(id).ifPresent(admission -> {
             admission.setStatus(AdmissionStatus.DISCHARGED);
             admission.setDischargeDate(LocalDateTime.now());
             admissionRepository.save(admission);
+            // Set bed status to CLEANING after discharge
+            if (admission.getBedId() != null) {
+                bedRepository.findById(admission.getBedId()).ifPresent(bed -> {
+                    bed.setStatus(BedStatus.CLEANING);
+                    bedRepository.save(bed);
+                });
+            }
         });
     }
 
