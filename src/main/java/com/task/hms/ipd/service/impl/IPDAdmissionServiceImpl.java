@@ -45,12 +45,8 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
         admission.setInsuranceDetails(request.getInsuranceDetails());
         admission.setInitialDeposit(request.getInitialDeposit());
         admission.setStatus(AdmissionStatus.ADMITTED);
-        // Use provided admissionDate if present, else now
-        if (request.getAdmissionDate() != null) {
-            admission.setAdmissionDate(request.getAdmissionDate());
-        } else {
-            admission.setAdmissionDate(LocalDateTime.now());
-        }
+        // Set admissionTime to now (or from request if you want to support it)
+        admission.setAdmissionTime(LocalDateTime.now());
         admission = admissionRepository.save(admission);
         return mapToResponseDTO(admission);
     }
@@ -70,7 +66,7 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
     public void dischargePatient(Long id) {
         admissionRepository.findById(id).ifPresent(admission -> {
             admission.setStatus(AdmissionStatus.DISCHARGED);
-            admission.setDischargeDate(LocalDateTime.now());
+            admission.setDischargeTime(LocalDateTime.now());
             admissionRepository.save(admission);
             // Set bed status to CLEANING after discharge
             if (admission.getBed() != null) {
@@ -94,8 +90,8 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
         dto.setInsuranceDetails(admission.getInsuranceDetails());
         dto.setInitialDeposit(admission.getInitialDeposit());
         dto.setStatus(admission.getStatus());
-        dto.setAdmissionDate(admission.getAdmissionDate());
-        dto.setDischargeDate(admission.getDischargeDate());
+        dto.setAdmissionDate(admission.getAdmissionTime());
+        dto.setDischargeDate(admission.getDischargeTime());
         return dto;
     }
 }

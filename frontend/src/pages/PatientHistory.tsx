@@ -21,14 +21,7 @@ const PatientHistory: React.FC = () => {
       .getConsultationsByPatientId(patientId)
       .then((data) => {
         console.log('Consultation history response:', data); // DEBUG
-        // Handle both array and paged object response
-        if (Array.isArray(data)) {
-          setConsultations(data);
-        } else if (data && Array.isArray(data.content)) {
-          setConsultations(data.content);
-        } else {
-          setConsultations([]);
-        }
+        setConsultations(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         setError('Failed to load consultation history: ' + (err?.message || ''));

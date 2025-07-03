@@ -29,9 +29,9 @@ public class IPDAdmission {
     @Enumerated(EnumType.STRING)
     private AdmissionStatus status; // ADMITTED, DISCHARGED, TRANSFERRED, CANCELLED
 
-    @Column(name = "admission_time")
-    private LocalDateTime admissionDate;
-    private LocalDateTime dischargeDate;
+    @Column(nullable = false)
+    private LocalDateTime admissionTime;
+    private LocalDateTime dischargeTime;
 
     // Getters and setters
     public Long getId() { return id; }
@@ -58,8 +58,8 @@ public class IPDAdmission {
     public void setInitialDeposit(Double initialDeposit) { this.initialDeposit = initialDeposit; }
     public AdmissionStatus getStatus() { return status; }
     public void setStatus(AdmissionStatus status) { this.status = status; }
-    public LocalDateTime getAdmissionDate() { return admissionDate; }
-    public void setAdmissionDate(LocalDateTime admissionDate) { this.admissionDate = admissionDate; }
-    public LocalDateTime getDischargeDate() { return dischargeDate; }
-    public void setDischargeDate(LocalDateTime dischargeDate) { this.dischargeDate = dischargeDate; }
+    public LocalDateTime getAdmissionTime() { return admissionTime; }
+    public void setAdmissionTime(LocalDateTime admissionTime) { this.admissionTime = admissionTime; }
+    public LocalDateTime getDischargeTime() { return dischargeTime; }
+    public void setDischargeTime(LocalDateTime dischargeTime) { this.dischargeTime = dischargeTime; }
 }

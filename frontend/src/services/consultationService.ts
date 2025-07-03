@@ -41,8 +41,12 @@ export class ConsultationService {
   }
 
   async getConsultationsByPatientId(patientId: string | number): Promise<Consultation[]> {
-    const response = await apiService.get<ApiResponse<Consultation[]>>(`/opd/consultations/history/${patientId}`);
-    return response.data.data;
+    const response = await apiService.get(`/opd/consultations/history/${patientId}`);
+    // Defensive: handle both array and object (for future-proofing)
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   }
 
   async downloadPatientHistoryPdf(patientId: string | number): Promise<Blob> {

@@ -24,6 +24,7 @@ import BillingPayments from './pages/BillingPayments';
 import BillingInsuranceClaims from './pages/BillingInsuranceClaims';
 import { IPDBeds } from './pages/IPDBeds';
 import { BrowserRouter } from 'react-router-dom';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -33,7 +34,14 @@ function App() {
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route
+              path="/register"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN']}>
+                  <Register />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route
               path="/dashboard"
@@ -173,6 +181,16 @@ function App() {
                 <ProtectedRoute requiredRoles={['ADMIN', 'NURSE', 'RECEPTIONIST']}>
                   <AppLayout>
                     <IPDBeds />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Profile />
                   </AppLayout>
                 </ProtectedRoute>
               }

@@ -57,6 +57,7 @@ import { AddWardModal } from '../AddWardModal';
 import { AdmittedPatientsList } from '../AdmittedPatientsList';
 import { AddVitalsModal } from '../AddVitalsModal';
 import { AddDoctorRoundModal } from '../AddDoctorRoundModal';
+import { ChangePasswordForm } from '../ChangePasswordForm';
 
 const drawerWidth = 280;
 
@@ -93,6 +94,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
   const [openBilling, setOpenBilling] = useState(false);
   const [patientIdInput, setPatientIdInput] = useState('');
   const [admitRefreshKey, setAdmitRefreshKey] = useState(0);
+  const [openChangePassword, setOpenChangePassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, hasAnyRole } = useAuth();
@@ -402,6 +404,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
         open={openAddDoctorRound} 
         onClose={() => setOpenAddDoctorRound(false)} 
       />
+      
+      {/* Change Password Dialog */}
+      <Dialog open={openChangePassword} onClose={() => setOpenChangePassword(false)}>
+        <DialogTitle>Change Password</DialogTitle>
+        <DialogContent>
+          <ChangePasswordForm />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenChangePassword(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 
@@ -463,13 +476,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
                 sx: { borderRadius: 2, minWidth: 200 }
               }}
             >
-              <MenuItem onClick={handleMenuClose}>
+              <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>
                 <ListItemIcon>
                   <AccountCircle fontSize="small" />
                 </ListItemIcon>
                 Profile
               </MenuItem>
-              <MenuItem onClick={handleMenuClose}>
+              <MenuItem onClick={() => { handleMenuClose(); setOpenChangePassword(true); }}>
                 <ListItemIcon>
                   <Settings fontSize="small" />
                 </ListItemIcon>

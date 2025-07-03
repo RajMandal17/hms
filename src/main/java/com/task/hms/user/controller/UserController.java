@@ -1,6 +1,8 @@
 package com.task.hms.user.controller;
 
 import com.task.hms.user.dto.UserRegistrationRequest;
+import com.task.hms.user.dto.LoginRequest;
+import com.task.hms.user.dto.UserPasswordChangeRequest;
 import com.task.hms.user.model.User;
 import com.task.hms.user.service.UserService;
 import com.task.hms.config.security.JwtUtil;
@@ -27,6 +29,39 @@ public class UserController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            User user = userService.authenticate(request.getUsername(), request.getPassword());
+            String token = jwtUtil.generateToken(user.getUsername());
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("id", user.getId());
+            userMap.put("username", user.getUsername());
+            userMap.put("email", user.getEmail());
+            userMap.put("roles", user.getRoles().stream().map(r -> r.getName().name()).toArray());
+            userMap.put("mustChangePassword", user.isMustChangePassword());
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("user", userMap);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException ex) {
+            if ("PASSWORD_CHANGE_REQUIRED".equals(ex.getMessage())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("message", "PASSWORD_CHANGE_REQUIRED"));
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("message", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody UserPasswordChangeRequest request) {
+        try {
+            userService.changePassword(request.getUsername(), request.getOldPassword(), request.getNewPassword());
+            return ResponseEntity.ok(Collections.singletonMap("message", "Password changed successfully"));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("message", ex.getMessage()));
+        }
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {

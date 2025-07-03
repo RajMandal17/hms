@@ -5,5 +5,6 @@ import com.task.hms.user.model.User;
 
 public interface UserService {
     User registerUser(UserRegistrationRequest request);
-    // ...other user-related methods...
+    User authenticate(String username, String password);
+    void changePassword(String username, String oldPassword, String newPassword);
 }
