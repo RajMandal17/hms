@@ -17,8 +17,6 @@ public class IpdAdmission {
     @JoinColumn(name = "bed_id")
     private Bed bed;
 
-    @Column(nullable = false)
-    private LocalDateTime admissionTime;
     private LocalDateTime dischargeTime;
 
     private String attendantName;
@@ -35,8 +33,6 @@ public class IpdAdmission {
     public void setPatientId(Long patientId) { this.patientId = patientId; }
     public Bed getBed() { return bed; }
     public void setBed(Bed bed) { this.bed = bed; }
-    public LocalDateTime getAdmissionTime() { return admissionTime; }
-    public void setAdmissionTime(LocalDateTime admissionTime) { this.admissionTime = admissionTime; }
     public LocalDateTime getDischargeTime() { return dischargeTime; }
     public void setDischargeTime(LocalDateTime dischargeTime) { this.dischargeTime = dischargeTime; }
     public String getAttendantName() { return attendantName; }
