@@ -13,15 +13,22 @@ public class Payment {
     @JoinColumn(name = "bill_id")
     private Bill bill;
 
+    private Long patientId;
+    private Long appointmentId;
     private Double amount;
     private String mode;
     private LocalDateTime paidAt;
     private String reference;
+    private String status; // PAID, PENDING
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Bill getBill() { return bill; }
     public void setBill(Bill bill) { this.bill = bill; }
+    public Long getPatientId() { return patientId; }
+    public void setPatientId(Long patientId) { this.patientId = patientId; }
+    public Long getAppointmentId() { return appointmentId; }
+    public void setAppointmentId(Long appointmentId) { this.appointmentId = appointmentId; }
     public Double getAmount() { return amount; }
     public void setAmount(Double amount) { this.amount = amount; }
     public String getMode() { return mode; }
@@ -30,4 +37,6 @@ public class Payment {
     public void setPaidAt(java.time.LocalDateTime paidAt) { this.paidAt = paidAt; }
     public String getReference() { return reference; }
     public void setReference(String reference) { this.reference = reference; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

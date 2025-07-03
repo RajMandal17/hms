@@ -1,23 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Alert, CircularProgress } from '@mui/material';
-// Types for pharmacy alerts
-interface MedicineBatchAlert {
-  id: number;
-  batchNumber: string;
-  expiryDate: string;
-  quantity: number;
-  medicine: { name: string };
-}
-// Types for billing alerts
-interface PendingBill {
-  id: number;
-  patientId: number;
-  totalAmount: number;
-  paidAmount: number;
-  status: string;
-}
-
+import { Alert, CircularProgress, Badge } from '@mui/material';
 import { getPendingBills } from '../../services/billingService';
 import {
   AppBar,
@@ -43,6 +26,8 @@ import {
   DialogActions,
   TextField,
   Button,
+  Paper,
+  Chip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -58,6 +43,9 @@ import {
   LocalPharmacy,
   ReceiptLong,
   History,
+  Notifications,
+  Settings,
+  Help,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -70,8 +58,7 @@ import { AdmittedPatientsList } from '../AdmittedPatientsList';
 import { AddVitalsModal } from '../AddVitalsModal';
 import { AddDoctorRoundModal } from '../AddDoctorRoundModal';
 
-const drawerWidth = 240;
-
+const drawerWidth = 280;
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -81,47 +68,15 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegistered, onAppointmentBooked }) => {
   // Pharmacy alert state
-  const [lowStock, setLowStock] = useState<MedicineBatchAlert[]>([]);
-  const [expiring, setExpiring] = useState<MedicineBatchAlert[]>([]);
+  const [lowStock, setLowStock] = useState<any[]>([]);
+  const [expiring, setExpiring] = useState<any[]>([]);
   const [pharmacyLoading, setPharmacyLoading] = useState(false);
   const [pharmacyError, setPharmacyError] = useState('');
+  
   // Billing alert state
-  const [pendingBills, setPendingBills] = useState<PendingBill[]>([]);
+  const [pendingBills, setPendingBills] = useState<any[]>([]);
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState('');
-
-  useEffect(() => {
-    const fetchPharmacyAlerts = async () => {
-      try {
-        setPharmacyLoading(true);
-        setPharmacyError('');
-        const [lowStockRes, expiringRes] = await Promise.all([
-          axios.get('/api/pharmacy/batches/low-stock?threshold=10'),
-          axios.get('/api/pharmacy/batches/expiring?daysAhead=30'),
-        ]);
-        setLowStock(lowStockRes.data);
-        setExpiring(expiringRes.data);
-      } catch (err: any) {
-        setPharmacyError('Failed to load pharmacy alerts');
-      } finally {
-        setPharmacyLoading(false);
-      }
-    };
-    const fetchBillingAlerts = async () => {
-      try {
-        setBillingLoading(true);
-        setBillingError('');
-        const res = await getPendingBills();
-        setPendingBills(res.data);
-      } catch (err: any) {
-        setBillingError('Failed to load billing alerts');
-      } finally {
-        setBillingLoading(false);
-      }
-    };
-    fetchPharmacyAlerts();
-    fetchBillingAlerts();
-  }, []);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -142,6 +97,33 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
   const location = useLocation();
   const { user, logout, hasAnyRole } = useAuth();
 
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        setPharmacyLoading(true);
+        setBillingLoading(true);
+        
+        const [lowStockRes, expiringRes, pendingBillsRes] = await Promise.all([
+          axios.get('/api/pharmacy/batches/low-stock?threshold=10'),
+          axios.get('/api/pharmacy/batches/expiring?daysAhead=30'),
+          getPendingBills(),
+        ]);
+        
+        setLowStock(lowStockRes.data);
+        setExpiring(expiringRes.data);
+        setPendingBills(pendingBillsRes.data);
+      } catch (err: any) {
+        setPharmacyError('Failed to load alerts');
+        setBillingError('Failed to load billing alerts');
+      } finally {
+        setPharmacyLoading(false);
+        setBillingLoading(false);
+      }
+    };
+
+    fetchAlerts();
+  }, []);
+
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -160,139 +142,418 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
     handleMenuClose();
   };
 
-  // Sidebar with dropdowns
+  const getTotalAlerts = () => {
+    return lowStock.length + expiring.length + pendingBills.length;
+  };
+
+  const menuItems = [
+    {
+      text: 'Dashboard',
+      icon: <Dashboard />,
+      path: '/dashboard',
+      roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST', 'ACCOUNTANT'],
+    },
+  ];
+
   const drawer = (
-    <div>
-      <Toolbar>
-        <Box display="flex" alignItems="center" gap={1}>
-          <Activity size={24} color="#1976d2" />
-          <Typography variant="h6" noWrap component="div" color="primary">
-            HMS
-          </Typography>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Toolbar sx={{ px: 3, py: 2 }}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Box
+            sx={{
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              borderRadius: 2,
+              p: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Activity size={24} color="white" />
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={700} color="primary">
+              MediCare
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Hospital Management
+            </Typography>
+          </Box>
         </Box>
       </Toolbar>
+      
       <Divider />
-      <List>
-        {/* OPD Dropdown */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => setOpenOpd(!openOpd)}>
+      
+      <Box sx={{ flex: 1, px: 2, py: 1 }}>
+        <List>
+          {/* Dashboard */}
+          <ListItemButton
+            onClick={() => navigate('/dashboard')}
+            selected={location.pathname === '/dashboard'}
+            sx={{ borderRadius: 2, mb: 0.5 }}
+          >
+            <ListItemIcon>
+              <Dashboard />
+            </ListItemIcon>
+            <ListItemText primary="Dashboard" />
+          </ListItemButton>
+
+          {/* OPD Section */}
+          <ListItemButton onClick={() => setOpenOpd(!openOpd)} sx={{ borderRadius: 2, mb: 0.5 }}>
             <ListItemIcon>
               <LocalHospital />
             </ListItemIcon>
             <ListItemText primary="OPD" />
             {openOpd ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
-        </ListItem>
-        <Collapse in={openOpd} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenRegister(true)}>
-              <ListItemIcon><People /></ListItemIcon>
-              <ListItemText primary="Register Patient" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenBookAppointment(true)} selected={location.pathname === '/appointments'}>
-              <ListItemIcon><CalendarToday /></ListItemIcon>
-              <ListItemText primary="Book Appointment" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/consultations')} selected={location.pathname === '/consultations'}>
-              <ListItemIcon><Assignment /></ListItemIcon>
-              <ListItemText primary="Consultation" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/patient-history')} selected={location.pathname.startsWith('/patient-history')}>
-              <ListItemIcon><History /></ListItemIcon>
-              <ListItemText primary="Patient History" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-        {/* IPD Dropdown */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => setOpenIpd(!openIpd)}>
+          <Collapse in={openOpd} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding sx={{ pl: 2 }}>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => setOpenRegister(true)}
+              >
+                <ListItemIcon><People /></ListItemIcon>
+                <ListItemText primary="Register Patient" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => setOpenBookAppointment(true)}
+              >
+                <ListItemIcon><CalendarToday /></ListItemIcon>
+                <ListItemText primary="Book Appointment" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/consultations')}
+                selected={location.pathname === '/consultations'}
+              >
+                <ListItemIcon><Assignment /></ListItemIcon>
+                <ListItemText primary="Consultations" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/patient-history')}
+                selected={location.pathname.startsWith('/patient-history')}
+              >
+                <ListItemIcon><History /></ListItemIcon>
+                <ListItemText primary="Patient History" />
+              </ListItemButton>
+            </List>
+          </Collapse>
+
+          {/* IPD Section */}
+          <ListItemButton onClick={() => setOpenIpd(!openIpd)} sx={{ borderRadius: 2, mb: 0.5 }}>
             <ListItemIcon>
               <Assignment />
             </ListItemIcon>
             <ListItemText primary="IPD" />
             {openIpd ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
-        </ListItem>
-        <Collapse in={openIpd} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAdmitPatient(true)}>
-              <ListItemIcon><People /></ListItemIcon>
-              <ListItemText primary="Admit Patient" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAddWard(true)}>
-              <ListItemIcon><Assignment /></ListItemIcon>
-              <ListItemText primary="Add Ward" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAddVitals(true)}>
-              <ListItemIcon><Assignment /></ListItemIcon>
-              <ListItemText primary="Add Vitals (Nurse)" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => setOpenAddDoctorRound(true)}>
-              <ListItemIcon><Assignment /></ListItemIcon>
-              <ListItemText primary="Add Doctor Round (Doctor)" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/ipd/beds')} selected={location.pathname === '/ipd/beds'}>
-              <ListItemIcon><Assignment /></ListItemIcon>
-              <ListItemText primary="IPD Beds" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-        {/* Pharmacy Dropdown */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => setOpenPharmacy((prev) => !prev)}>
+          <Collapse in={openIpd} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding sx={{ pl: 2 }}>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => setOpenAdmitPatient(true)}
+              >
+                <ListItemIcon><People /></ListItemIcon>
+                <ListItemText primary="Admit Patient" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => setOpenAddWard(true)}
+              >
+                <ListItemIcon><Assignment /></ListItemIcon>
+                <ListItemText primary="Add Ward" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/ipd/beds')}
+                selected={location.pathname === '/ipd/beds'}
+              >
+                <ListItemIcon><Assignment /></ListItemIcon>
+                <ListItemText primary="IPD Beds" />
+              </ListItemButton>
+            </List>
+          </Collapse>
+
+          {/* Pharmacy Section */}
+          <ListItemButton onClick={() => setOpenPharmacy(!openPharmacy)} sx={{ borderRadius: 2, mb: 0.5 }}>
             <ListItemIcon>
-              <LocalPharmacy />
+              <Badge badgeContent={lowStock.length + expiring.length} color="error">
+                <LocalPharmacy />
+              </Badge>
             </ListItemIcon>
             <ListItemText primary="Pharmacy" />
             {openPharmacy ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
-        </ListItem>
-        <Collapse in={openPharmacy} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/pharmacy/medicines')} selected={location.pathname.startsWith('/pharmacy/medicines')}>
-              <ListItemText primary="Medicines" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/pharmacy/batches')} selected={location.pathname.startsWith('/pharmacy/batches')}>
-              <ListItemText primary="Batches" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/pharmacy/sales')} selected={location.pathname.startsWith('/pharmacy/sales')}>
-              <ListItemText primary="Sales" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/pharmacy/returns')} selected={location.pathname.startsWith('/pharmacy/returns')}>
-              <ListItemText primary="Returns" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-        {/* Billing Dropdown */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => setOpenBilling((prev) => !prev)}>
+          <Collapse in={openPharmacy} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding sx={{ pl: 2 }}>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/pharmacy/medicines')}
+                selected={location.pathname.startsWith('/pharmacy/medicines')}
+              >
+                <ListItemText primary="Medicines" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/pharmacy/batches')}
+                selected={location.pathname.startsWith('/pharmacy/batches')}
+              >
+                <ListItemText primary="Batches" />
+                {lowStock.length > 0 && (
+                  <Chip size="small" label={lowStock.length} color="error" />
+                )}
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/pharmacy/sales')}
+                selected={location.pathname.startsWith('/pharmacy/sales')}
+              >
+                <ListItemText primary="Sales" />
+              </ListItemButton>
+            </List>
+          </Collapse>
+
+          {/* Billing Section */}
+          <ListItemButton onClick={() => setOpenBilling(!openBilling)} sx={{ borderRadius: 2, mb: 0.5 }}>
             <ListItemIcon>
-              <ReceiptLong />
+              <Badge badgeContent={pendingBills.length} color="warning">
+                <ReceiptLong />
+              </Badge>
             </ListItemIcon>
             <ListItemText primary="Billing" />
             {openBilling ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
-        </ListItem>
-        <Collapse in={openBilling} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/billing')} selected={location.pathname === '/billing'}>
-              <ListItemText primary="All Bills" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/billing/payments')} selected={location.pathname.startsWith('/billing/payments')}>
-              <ListItemText primary="Payments" />
-            </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }} onClick={() => navigate('/billing/insurance-claims')} selected={location.pathname.startsWith('/billing/insurance-claims')}>
-              <ListItemText primary="Insurance Claims" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-      </List>
-      <RegisterPatientModal open={openRegister} onClose={() => setOpenRegister(false)} onSuccess={onPatientRegistered} />
-      <BookAppointmentModal open={openBookAppointment} onClose={() => setOpenBookAppointment(false)} onSuccess={onAppointmentBooked} />
-      <AdmitPatientModal open={openAdmitPatient} onClose={() => setOpenAdmitPatient(false)} onSuccess={() => setAdmitRefreshKey(k => k + 1)} />
-      <AddWardModal open={openAddWard} onClose={() => setOpenAddWard(false)} onSuccess={onPatientRegistered} />
-      <AddVitalsModal open={openAddVitals} onClose={() => setOpenAddVitals(false)} />
-      <AddDoctorRoundModal open={openAddDoctorRound} onClose={() => setOpenAddDoctorRound(false)} />
+          <Collapse in={openBilling} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding sx={{ pl: 2 }}>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/billing')}
+                selected={location.pathname === '/billing'}
+              >
+                <ListItemText primary="All Bills" />
+                {pendingBills.length > 0 && (
+                  <Chip size="small" label={pendingBills.length} color="warning" />
+                )}
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/billing/payments')}
+                selected={location.pathname.startsWith('/billing/payments')}
+              >
+                <ListItemText primary="Payments" />
+              </ListItemButton>
+            </List>
+          </Collapse>
+        </List>
+      </Box>
+
+      {/* Bottom section with user info */}
+      <Box sx={{ p: 2, borderTop: '1px solid #e2e8f0' }}>
+        <Paper sx={{ p: 2, backgroundColor: '#f8fafc' }}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Avatar sx={{ width: 32, height: 32, backgroundColor: '#2563eb' }}>
+              {user?.username?.[0]?.toUpperCase() || 'U'}
+            </Avatar>
+            <Box flex={1}>
+              <Typography variant="body2" fontWeight={500}>
+                {user?.username}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {user?.role}
+              </Typography>
+            </Box>
+            {getTotalAlerts() > 0 && (
+              <Badge badgeContent={getTotalAlerts()} color="error">
+                <Notifications fontSize="small" />
+              </Badge>
+            )}
+          </Box>
+        </Paper>
+      </Box>
+
+      {/* Modals */}
+      <RegisterPatientModal 
+        open={openRegister} 
+        onClose={() => setOpenRegister(false)} 
+        onSuccess={onPatientRegistered} 
+      />
+      <BookAppointmentModal 
+        open={openBookAppointment} 
+        onClose={() => setOpenBookAppointment(false)} 
+        onSuccess={onAppointmentBooked} 
+      />
+      <AdmitPatientModal 
+        open={openAdmitPatient} 
+        onClose={() => setOpenAdmitPatient(false)} 
+        onSuccess={() => setAdmitRefreshKey(k => k + 1)} 
+      />
+      <AddWardModal 
+        open={openAddWard} 
+        onClose={() => setOpenAddWard(false)} 
+        onSuccess={onPatientRegistered} 
+      />
+      <AddVitalsModal 
+        open={openAddVitals} 
+        onClose={() => setOpenAddVitals(false)} 
+      />
+      <AddDoctorRoundModal 
+        open={openAddDoctorRound} 
+        onClose={() => setOpenAddDoctorRound(false)} 
+      />
+    </Box>
+  );
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      
+      {/* App Bar */}
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
+          backgroundColor: 'white',
+          color: 'text.primary',
+          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+          borderBottom: '1px solid #e2e8f0',
+        }}
+      >
+        <Toolbar sx={{ px: { xs: 2, sm: 3 } }}>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+          
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
+            Hospital Management System
+          </Typography>
+          
+          <Box display="flex" alignItems="center" gap={2}>
+            {/* Notifications */}
+            <IconButton color="inherit">
+              <Badge badgeContent={getTotalAlerts()} color="error">
+                <Notifications />
+              </Badge>
+            </IconButton>
+            
+            {/* User Menu */}
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                {user?.username}
+              </Typography>
+              <IconButton onClick={handleMenuClick} color="inherit">
+                <Avatar sx={{ width: 32, height: 32, backgroundColor: '#2563eb' }}>
+                  {user?.username?.[0]?.toUpperCase() || 'U'}
+                </Avatar>
+              </IconButton>
+            </Box>
+            
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              PaperProps={{
+                sx: { borderRadius: 2, minWidth: 200 }
+              }}
+            >
+              <MenuItem onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <AccountCircle fontSize="small" />
+                </ListItemIcon>
+                Profile
+              </MenuItem>
+              <MenuItem onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <Settings fontSize="small" />
+                </ListItemIcon>
+                Settings
+              </MenuItem>
+              <MenuItem onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <Help fontSize="small" />
+                </ListItemIcon>
+                Help
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={handleLogout}>
+                <ListItemIcon>
+                  <Logout fontSize="small" />
+                </ListItemIcon>
+                Logout
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Drawer */}
+      <Box
+        component="nav"
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+      >
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              backgroundColor: 'white',
+              borderRight: '1px solid #e2e8f0',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              backgroundColor: 'white',
+              borderRight: '1px solid #e2e8f0',
+            },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mt: 8,
+          backgroundColor: '#f8fafc',
+          minHeight: 'calc(100vh - 64px)',
+        }}
+      >
+        {children}
+        
+        {/* IPD Admitted Patients List */}
+        {openIpd && (
+          <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+            <AdmittedPatientsList refreshKey={admitRefreshKey} />
+          </Box>
+        )}
+      </Box>
+
+      {/* Patient ID Dialog */}
       <Dialog open={openPatientDialog} onClose={() => setOpenPatientDialog(false)}>
         <DialogTitle>Enter Patient ID</DialogTitle>
         <DialogContent>
@@ -322,153 +583,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
-  );
-
-  return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Hospital Management System
-          </Typography>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="body2">
-              {user?.firstName} {user?.lastName}
-            </Typography>
-            <IconButton
-              size="large"
-              edge="end"
-              onClick={handleMenuClick}
-              color="inherit"
-            >
-              <Avatar sx={{ width: 32, height: 32 }}>
-                <AccountCircle />
-              </Avatar>
-            </IconButton>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-            >
-              <MenuItem onClick={handleMenuClose}>
-                <ListItemIcon>
-                  <AccountCircle fontSize="small" />
-                </ListItemIcon>
-                Profile
-              </MenuItem>
-              <MenuItem onClick={handleLogout}>
-                <ListItemIcon>
-                  <Logout fontSize="small" />
-                </ListItemIcon>
-                Logout
-              </MenuItem>
-            </Menu>
-          </Box>
-        </Toolbar>
-      </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: 8,
-        }}
-      >
-        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-          {openIpd && <AdmittedPatientsList refreshKey={admitRefreshKey} />}
-        </Box>
-        {/* In-app pharmacy alert banners */}
-        {pharmacyLoading && <CircularProgress size={20} sx={{ mb: 2 }} />}
-        {pharmacyError && <Alert severity="error" sx={{ mb: 2 }}>{pharmacyError}</Alert>}
-        {lowStock.length > 0 && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            <strong>Low Stock Alert:</strong>
-            {lowStock.map(batch => (
-              <span key={batch.id} style={{ marginLeft: 8 }}>
-                {batch.medicine.name} (Batch: {batch.batchNumber}) - Qty: {batch.quantity}
-              </span>
-            ))}
-          </Alert>
-        )}
-        {expiring.length > 0 && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            <strong>Expiring Soon:</strong>
-            {expiring.map(batch => (
-              <span key={batch.id} style={{ marginLeft: 8 }}>
-                {batch.medicine.name} (Batch: {batch.batchNumber}) - Expiry: {batch.expiryDate}
-              </span>
-            ))}
-          </Alert>
-        )}
-        {/* In-app billing alert banners */}
-        {billingLoading && <CircularProgress size={20} sx={{ mb: 2 }} />}
-        {billingError && <Alert severity="error" sx={{ mb: 2 }}>{billingError}</Alert>}
-        {pendingBills.length > 0 && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            <strong>Pending Bills:</strong>
-            {pendingBills.map(bill => (
-              <span key={bill.id} style={{ marginLeft: 8 }}>
-                Bill #{bill.id} (Patient ID: {bill.patientId}) - Due: ₹{bill.totalAmount - (bill.paidAmount || 0)}
-              </span>
-            ))}
-          </Alert>
-        )}
-        {children}
-      </Box>
     </Box>
   );
 };

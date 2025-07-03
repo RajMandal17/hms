@@ -37,7 +37,8 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
         admission.setPatientId(request.getPatientId());
         admission.setDoctorId(request.getDoctorId());
         admission.setWardId(request.getWardId());
-        admission.setBedId(request.getBedId());
+        // Set the bed relationship
+        admission.setBed(bed);
         admission.setAttendantName(request.getAttendantName());
         admission.setAttendantContact(request.getAttendantContact());
         admission.setAdmissionNotes(request.getAdmissionNotes());
@@ -72,11 +73,10 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
             admission.setDischargeDate(LocalDateTime.now());
             admissionRepository.save(admission);
             // Set bed status to CLEANING after discharge
-            if (admission.getBedId() != null) {
-                bedRepository.findById(admission.getBedId()).ifPresent(bed -> {
-                    bed.setStatus(BedStatus.CLEANING);
-                    bedRepository.save(bed);
-                });
+            if (admission.getBed() != null) {
+                IPDBed bed = admission.getBed();
+                bed.setStatus(BedStatus.CLEANING);
+                bedRepository.save(bed);
             }
         });
     }
@@ -87,7 +87,7 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
         dto.setPatientId(admission.getPatientId());
         dto.setDoctorId(admission.getDoctorId());
         dto.setWardId(admission.getWardId());
-        dto.setBedId(admission.getBedId());
+        dto.setBedId(admission.getBed() != null ? admission.getBed().getId() : null);
         dto.setAttendantName(admission.getAttendantName());
         dto.setAttendantContact(admission.getAttendantContact());
         dto.setAdmissionNotes(admission.getAdmissionNotes());

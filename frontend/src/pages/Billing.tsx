@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Bill, BillItem, Payment, InsuranceClaim, createBill, getAllBills, makePayment, claimInsurance, downloadBillPdf } from '../services/billingService';
+import { Bill, BillItem, InsuranceClaim, createBill, getAllBills, claimInsurance, downloadBillPdf } from '../services/billingService';
+import { Payment, recordPayment } from '../services/paymentService';
   const handleDownloadPdf = async (billId: number) => {
     try {
       const res = await downloadBillPdf(billId);
@@ -37,7 +38,15 @@ const Billing: React.FC = () => {
 
   const handleMakePayment = async () => {
     if (!selectedBill || !payment.amount || !payment.mode) return;
-    await makePayment(selectedBill.id!, payment as Payment);
+    // Construct payment object for new endpoint
+    const paymentData: Payment = {
+      amount: payment.amount,
+      mode: payment.mode,
+      bill: selectedBill.id, // Pass bill id as per Payment interface
+      patientId: selectedBill.patientId,
+      reference: payment.reference || '',
+    };
+    await recordPayment(paymentData);
     const res = await getAllBills();
     setBills(res.data);
     setPayment({});

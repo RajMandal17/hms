@@ -14,7 +14,11 @@ public class IPDAdmission {
     private Long patientId;
     private Long doctorId;
     private Long wardId;
-    private Long bedId;
+    // private Long bedId; // Removed to avoid duplicate mapping with bed entity
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bed_id")
+    private IPDBed bed;
 
     private String attendantName;
     private String attendantContact;
@@ -25,6 +29,7 @@ public class IPDAdmission {
     @Enumerated(EnumType.STRING)
     private AdmissionStatus status; // ADMITTED, DISCHARGED, TRANSFERRED, CANCELLED
 
+    @Column(name = "admission_time")
     private LocalDateTime admissionDate;
     private LocalDateTime dischargeDate;
 
@@ -37,8 +42,10 @@ public class IPDAdmission {
     public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
     public Long getWardId() { return wardId; }
     public void setWardId(Long wardId) { this.wardId = wardId; }
-    public Long getBedId() { return bedId; }
-    public void setBedId(Long bedId) { this.bedId = bedId; }
+    // public Long getBedId() { return bedId; }
+    // public void setBedId(Long bedId) { this.bedId = bedId; }
+    public IPDBed getBed() { return bed; }
+    public void setBed(IPDBed bed) { this.bed = bed; }
     public String getAttendantName() { return attendantName; }
     public void setAttendantName(String attendantName) { this.attendantName = attendantName; }
     public String getAttendantContact() { return attendantContact; }
