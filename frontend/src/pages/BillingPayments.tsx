@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, MenuItem, List, ListItem, ListItemText, Divider, Alert } from '@mui/material';
-import { recordPayment, getPaymentsByPatient, Payment } from '../services/paymentService';
+import { recordPayment, getPaymentsByPatient, Payment } from '../services/paymentService.local';
 
 const paymentModes = ['Cash', 'Card', 'UPI', 'Other'];
 
@@ -13,6 +13,10 @@ const BillingPayments: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // IPD-specific fields
+  const [isIPD, setIsIPD] = useState(false);
+  const [deposit, setDeposit] = useState('');
+  const [partial, setPartial] = useState(false);
 
   const handleRecord = async () => {
     setError(''); setSuccess('');
@@ -22,9 +26,17 @@ const BillingPayments: React.FC = () => {
     }
     setLoading(true);
     try {
-      await recordPayment({ patientId: Number(patientId), amount: Number(amount), mode, reference });
+      await recordPayment({
+        patientId: Number(patientId),
+        amount: Number(amount),
+        mode,
+        reference,
+        deposit: isIPD && deposit ? Number(deposit) : undefined,
+        partial: isIPD ? partial : undefined,
+        type: isIPD ? 'IPD' : 'OPD',
+      });
       setSuccess('Payment recorded');
-      setAmount(''); setReference('');
+      setAmount(''); setReference(''); setDeposit(''); setPartial(false);
       handleFetch();
     } catch (e: any) {
       setError(e?.response?.data || 'Failed to record payment');
@@ -62,6 +74,19 @@ const BillingPayments: React.FC = () => {
           {paymentModes.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
         </TextField>
         <TextField label="Reference" value={reference} onChange={e => setReference(e.target.value)} size="small" />
+      </Box>
+      <Box display="flex" gap={2} mb={2}>
+        <Button variant={isIPD ? "contained" : "outlined"} onClick={() => setIsIPD(v => !v)} size="small">
+          {isIPD ? "IPD Payment" : "OPD Payment"}
+        </Button>
+        {isIPD && (
+          <>
+            <TextField label="Deposit" value={deposit} onChange={e => setDeposit(e.target.value)} size="small" type="number" />
+            <Button variant={partial ? "contained" : "outlined"} onClick={() => setPartial(v => !v)} size="small">
+              {partial ? "Partial" : "Full"}
+            </Button>
+          </>
+        )}
       </Box>
       <Button variant="contained" onClick={handleRecord} disabled={loading}>Record Payment</Button>
       <Divider sx={{ my: 3 }} />

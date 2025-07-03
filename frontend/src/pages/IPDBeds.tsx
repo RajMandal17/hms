@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, MenuItem, Select, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, MenuItem, Select, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Box, Grid } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import { ipdService, IPDBed } from '../services/ipdService';
+import type { SelectChangeEvent } from '@mui/material';
 
 export const IPDBeds: React.FC = () => {
   const [beds, setBeds] = useState<IPDBed[]>([]);
@@ -29,7 +30,8 @@ export const IPDBeds: React.FC = () => {
     fetchBeds();
   };
 
-  const handleStatusChange = async (bed: IPDBed, status: string) => {
+  const handleStatusChange = async (bed: IPDBed, event: SelectChangeEvent<string>) => {
+    const status = event.target.value as string;
     await ipdService.updateBedStatus(bed.id, status);
     fetchBeds();
   };
@@ -56,8 +58,34 @@ export const IPDBeds: React.FC = () => {
     fetchBeds();
   };
 
+  // Add summary counts for each status
+  const statusCounts = beds.reduce((acc, bed) => {
+    acc[bed.status] = (acc[bed.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const statusColors: Record<string, string> = {
+    VACANT: '#10b981', // green
+    OCCUPIED: '#2563eb', // blue
+    CLEANING: '#f59e0b', // yellow
+    MAINTENANCE: '#ef4444', // red
+  };
+
   return (
     <Paper sx={{ p: 2 }}>
+      {/* Bed Status Dashboard */}
+      <Box mb={2}>
+        <Grid container spacing={2}>
+          {Object.entries(statusCounts).map(([status, count]) => (
+            <Grid item key={status}>
+              <Chip
+                label={`${status}: ${count}`}
+                sx={{ backgroundColor: statusColors[status] || '#e5e7eb', color: '#fff', fontWeight: 600 }}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
       <Button variant="contained" onClick={() => setOpenDialog(true)} sx={{ mb: 2 }}>Add Bed</Button>
       <TableContainer>
         <Table>
@@ -77,16 +105,23 @@ export const IPDBeds: React.FC = () => {
                 <TableCell>{bed.wardId}</TableCell>
                 <TableCell>{bed.bedNumber}</TableCell>
                 <TableCell>
-                  <Select
-                    value={bed.status}
-                    onChange={e => handleStatusChange(bed, e.target.value as string)}
-                    size="small"
-                  >
-                    <MenuItem value="VACANT">VACANT</MenuItem>
-                    <MenuItem value="OCCUPIED">OCCUPIED</MenuItem>
-                    <MenuItem value="CLEANING">CLEANING</MenuItem>
-                    <MenuItem value="MAINTENANCE">MAINTENANCE</MenuItem>
-                  </Select>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Chip
+                      label={bed.status}
+                      sx={{ backgroundColor: statusColors[bed.status] || '#e5e7eb', color: '#fff', fontWeight: 600 }}
+                      size="small"
+                    />
+                    <Select
+                      value={bed.status}
+                      onChange={e => handleStatusChange(bed, e)}
+                      size="small"
+                    >
+                      <MenuItem value="VACANT">VACANT</MenuItem>
+                      <MenuItem value="OCCUPIED">OCCUPIED</MenuItem>
+                      <MenuItem value="CLEANING">CLEANING</MenuItem>
+                      <MenuItem value="MAINTENANCE">MAINTENANCE</MenuItem>
+                    </Select>
+                  </Box>
                 </TableCell>
                 <TableCell>
                   <IconButton onClick={() => handleEdit(bed)}><Edit /></IconButton>

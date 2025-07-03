@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Bill, BillItem, InsuranceClaim, createBill, getAllBills, claimInsurance, downloadBillPdf } from '../services/billingService';
 import { Payment, recordPayment } from '../services/paymentService';
-  const handleDownloadPdf = async (billId: number) => {
+import { exportBillToPdf } from '../utils/pdfExport';
+
+const handleDownloadPdf = async (billId: number) => {
     try {
       const res = await downloadBillPdf(billId);
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
@@ -96,6 +98,7 @@ const Billing: React.FC = () => {
                 <td className="border px-2">
                   <button onClick={() => handleSelectBill(bill)} className="text-blue-600 mr-2">Select</button>
                   <button onClick={() => handleDownloadPdf(bill.id!)} className="text-green-600">Download PDF</button>
+                  <button onClick={() => exportBillToPdf(bill)} className="text-purple-600 ml-2">Export PDF (Local)</button>
                 </td>
               </tr>
             ))}
