@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getBatches, addBatch, updateBatch, deleteBatch, PharmacyBatch } from '../services/pharmacyBatchService';
+import { getBatches, addBatch, updateBatch, deleteBatch, PharmacyBatch, getLowStockBatches, getExpiringBatches } from '../services/pharmacyBatchService';
 import { getMedicines, Medicine } from '../services/pharmacyService';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, CircularProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -32,6 +32,9 @@ const PharmacyBatches: React.FC = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [lowStockBatches, setLowStockBatches] = useState<PharmacyBatch[]>([]);
+  const [expiringBatches, setExpiringBatches] = useState<PharmacyBatch[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -42,6 +45,18 @@ const PharmacyBatches: React.FC = () => {
       })
       .catch(() => setError('Failed to fetch batches or medicines'))
       .finally(() => setLoading(false));
+
+    // Fetch alerts
+    setAlertsLoading(true);
+    Promise.all([
+      getLowStockBatches(10), // threshold can be adjusted
+      getExpiringBatches(30)  // daysAhead can be adjusted
+    ])
+      .then(([lowStock, expiring]) => {
+        setLowStockBatches(lowStock);
+        setExpiringBatches(expiring);
+      })
+      .finally(() => setAlertsLoading(false));
   }, []);
 
   const handleAddOpen = () => {
@@ -134,33 +149,66 @@ const PharmacyBatches: React.FC = () => {
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Medicine</TableCell>
-                <TableCell>Batch Number</TableCell>
-                <TableCell>Expiry Date</TableCell>
-                <TableCell>Stock</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {batches.map((batch) => (
-                <TableRow key={batch.id}>
-                  <TableCell>{medicines.find(m => m.id === batch.medicineId)?.name || batch.medicineId}</TableCell>
-                  <TableCell>{batch.batchNumber}</TableCell>
-                  <TableCell>{batch.expiryDate}</TableCell>
-                  <TableCell>{batch.stock}</TableCell>
-                  <TableCell>
-                    <IconButton onClick={() => handleEditOpen(batch)} size="small"><EditIcon /></IconButton>
-                    <IconButton onClick={() => handleDelete(batch.id)} size="small" disabled={deleteLoading && deleteId === batch.id}><DeleteIcon /></IconButton>
-                  </TableCell>
+        <>
+          {/* Alerts */}
+          {(alertsLoading) ? (
+            <CircularProgress size={20} />
+          ) : (
+            <>
+              {lowStockBatches.length > 0 && (
+                <Paper sx={{ p: 1, mb: 2, background: '#fffbe6', border: '1px solid #ffe58f' }}>
+                  <Typography variant="subtitle1" color="warning.main">Low Stock Alert</Typography>
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {lowStockBatches.map(batch => (
+                      <li key={batch.id}>
+                        {medicines.find(m => m.id === batch.medicineId)?.name || batch.medicineId} (Batch {batch.batchNumber}): {batch.stock} left
+                      </li>
+                    ))}
+                  </ul>
+                </Paper>
+              )}
+              {expiringBatches.length > 0 && (
+                <Paper sx={{ p: 1, mb: 2, background: '#fff1f0', border: '1px solid #ffa39e' }}>
+                  <Typography variant="subtitle1" color="error">Expiring Soon</Typography>
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {expiringBatches.map(batch => (
+                      <li key={batch.id}>
+                        {medicines.find(m => m.id === batch.medicineId)?.name || batch.medicineId} (Batch {batch.batchNumber}): Expires {batch.expiryDate}
+                      </li>
+                    ))}
+                  </ul>
+                </Paper>
+              )}
+            </>
+          )}
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Medicine</TableCell>
+                  <TableCell>Batch Number</TableCell>
+                  <TableCell>Expiry Date</TableCell>
+                  <TableCell>Stock</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {batches.map((batch) => (
+                  <TableRow key={batch.id}>
+                    <TableCell>{medicines.find(m => m.id === batch.medicineId)?.name || batch.medicineId}</TableCell>
+                    <TableCell>{batch.batchNumber}</TableCell>
+                    <TableCell>{batch.expiryDate}</TableCell>
+                    <TableCell>{batch.stock}</TableCell>
+                    <TableCell>
+                      <IconButton onClick={() => handleEditOpen(batch)} size="small"><EditIcon /></IconButton>
+                      <IconButton onClick={() => handleDelete(batch.id)} size="small" disabled={deleteLoading && deleteId === batch.id}><DeleteIcon /></IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
       )}
       {/* Add Batch Dialog */}
       <Dialog open={openAdd} onClose={handleAddClose}>

@@ -27,3 +27,13 @@ export const updateBatch = async (id: number, batch: Partial<PharmacyBatch>): Pr
 export const deleteBatch = async (id: number): Promise<void> => {
   await apiService.delete(`/pharmacy/batches/${id}`);
 };
+
+export const getLowStockBatches = async (threshold: number): Promise<PharmacyBatch[]> => {
+  const response = await apiService.get<PharmacyBatch[]>(`/pharmacy/batches/low-stock?threshold=${threshold}`);
+  return response.data;
+};
+
+export const getExpiringBatches = async (daysAhead: number): Promise<PharmacyBatch[]> => {
+  const response = await apiService.get<PharmacyBatch[]>(`/pharmacy/batches/expiring?daysAhead=${daysAhead}`);
+  return response.data;
+};

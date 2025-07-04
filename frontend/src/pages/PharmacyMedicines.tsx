@@ -1,13 +1,9 @@
-
-
 import React, { useEffect, useState } from 'react';
 import { getMedicines, addMedicine, updateMedicine, deleteMedicine, Medicine } from '../services/pharmacyService';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, CircularProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-
-// ...existing imports...
 
 // Only one PharmacyMedicines component should exist!
 const PharmacyMedicines: React.FC = () => {
@@ -44,7 +40,50 @@ const PharmacyMedicines: React.FC = () => {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
-  // ...existing handlers (handleEditOpen, handleEditClose, etc.)...
+  // Add missing edit handlers
+  const handleEditOpen = (med: Medicine) => {
+    setEditForm({
+      id: med.id,
+      name: med.name,
+      category: med.category,
+      manufacturer: med.manufacturer,
+      stock: String(med.stock),
+      expiryDate: med.expiryDate,
+    });
+    setEditError(null);
+    setOpenEdit(true);
+  };
+
+  const handleEditClose = () => {
+    setOpenEdit(false);
+    setEditError(null);
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const handleEditSubmit = async () => {
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      const updated = await updateMedicine(editForm.id, {
+        name: editForm.name,
+        category: editForm.category,
+        manufacturer: editForm.manufacturer,
+        stock: Number(editForm.stock),
+        expiryDate: editForm.expiryDate,
+      });
+      setMedicines((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+      setOpenEdit(false);
+    } catch (err) {
+      setEditError('Failed to update medicine');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // ...existing code...
 
   useEffect(() => {
     setLoading(true);
