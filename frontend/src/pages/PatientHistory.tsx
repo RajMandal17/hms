@@ -21,10 +21,12 @@ const PatientHistory: React.FC = () => {
       .getConsultationsByPatientId(patientId)
       .then((data) => {
         console.log('Consultation history response:', data); // DEBUG
-        // Handle both array and paged object response
+        // Log each consultation for inspection
         if (Array.isArray(data)) {
+          data.forEach((item, idx) => console.log('Consultation[' + idx + ']:', item));
           setConsultations(data);
         } else if (data && Array.isArray(data.content)) {
+          data.content.forEach((item, idx) => console.log('Consultation[' + idx + ']:', item));
           setConsultations(data.content);
         } else {
           setConsultations([]);
@@ -96,15 +98,17 @@ const PatientHistory: React.FC = () => {
             <TableBody>
               {(consultations || []).map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell>{c.consultationTime ? new Date(c.consultationTime).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{c.patientName || '-'}</TableCell>
-                  <TableCell>{c.doctorName || '-'}</TableCell>
+                  <TableCell>{c.consultationTime ? new Date(c.consultationTime).toLocaleString() : '-'}</TableCell>
+                  <TableCell>{c.patientName || c.patient?.name || c.patient?.firstName || '-'}</TableCell>
+                  <TableCell>{c.doctorName || c.doctor?.name || c.doctor?.firstName || '-'}</TableCell>
                   <TableCell>{c.symptoms || '-'}</TableCell>
                   <TableCell>{c.diagnosis || '-'}</TableCell>
-                  <TableCell>{Array.isArray(c.medicines) && c.medicines.length > 0 ? c.medicines.map(m => m.name).join(', ') : '-'}</TableCell>
+                  <TableCell>{Array.isArray(c.medicines) && c.medicines.length > 0
+                    ? c.medicines.map(m => [m.name, m.dosage, m.frequency, m.duration].filter(Boolean).join(' / ')).join(', ')
+                    : '-'}</TableCell>
                   <TableCell>{c.prescription || '-'}</TableCell>
                   <TableCell>{c.notes || '-'}</TableCell>
-                  <TableCell>{c.followUpDate ? new Date(c.followUpDate).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell>{c.followUpDate ? (typeof c.followUpDate === 'string' ? new Date(c.followUpDate).toLocaleDateString() : c.followUpDate.toLocaleDateString()) : '-'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

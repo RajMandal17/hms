@@ -38,7 +38,9 @@ const PharmacyBatches: React.FC = () => {
     Promise.all([getBatches(), getMedicines()])
       .then(([batches, meds]) => {
         setBatches(batches);
-        setMedicines(meds);
+        setMedicines(Array.isArray(meds) ? meds : []);
+        console.log('Fetched medicines:', meds);
+        console.log('Fetched batches:', batches);
       })
       .catch(() => setError('Failed to fetch batches or medicines'))
       .finally(() => setLoading(false));
@@ -77,7 +79,7 @@ const PharmacyBatches: React.FC = () => {
   const handleEditOpen = (batch: PharmacyBatch) => {
     setEditForm({
       id: batch.id,
-      medicineId: String(batch.medicineId),
+      medicineId: batch.medicineId ? String(batch.medicineId) : '',
       batchNumber: batch.batchNumber,
       expiryDate: batch.expiryDate,
       stock: String(batch.stock),
@@ -148,10 +150,20 @@ const PharmacyBatches: React.FC = () => {
             <TableBody>
               {batches.map((batch) => (
                 <TableRow key={batch.id}>
-                  <TableCell>{medicines.find(m => m.id === batch.medicineId)?.name || batch.medicineId}</TableCell>
+                  <TableCell>{
+                    medicines.find(m =>
+                      m.id === batch.medicineId ||
+                      m.id === batch.medicine_id ||
+                      m.id === batch.medicine?.id
+                    )?.name ||
+                    batch.medicineId ||
+                    batch.medicine_id ||
+                    batch.medicine?.id ||
+                    ''
+                  }</TableCell>
                   <TableCell>{batch.batchNumber}</TableCell>
                   <TableCell>{batch.expiryDate}</TableCell>
-                  <TableCell>{batch.stock}</TableCell>
+                  <TableCell>{batch.quantity ?? batch.stock ?? ''}</TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleEditOpen(batch)} size="small"><EditIcon /></IconButton>
                     <IconButton onClick={() => handleDelete(batch.id)} size="small" disabled={deleteLoading && deleteId === batch.id}><DeleteIcon /></IconButton>

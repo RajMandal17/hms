@@ -1,5 +1,6 @@
 package com.task.hms.pharmacy.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.List;
 
@@ -15,6 +16,7 @@ public class Medicine {
     private String description;
 
     @OneToMany(mappedBy = "medicine")
+    @JsonManagedReference
     private List<MedicineBatch> batches;
 
     public Long getId() {
@@ -50,23 +52,23 @@ public class Medicine {
     }
 
     public String getCategory() {
-        return category;
+        return category == null ? "" : category;
     }
 
     public void setCategory(String category) {
-        this.category = category;
+        this.category = category == null ? "" : category;
     }
 
     public String getDescription() {
-        return description;
+        return description == null ? "" : description;
     }
 
     public void setDescription(String description) {
-        this.description = description;
+        this.description = description == null ? "" : description;
     }
 
     public List<MedicineBatch> getBatches() {
-        return batches;
+        return batches == null ? java.util.Collections.emptyList() : batches;
     }
 
     public void setBatches(List<MedicineBatch> batches) {

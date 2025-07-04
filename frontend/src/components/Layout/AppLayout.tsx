@@ -57,6 +57,7 @@ import { AddWardModal } from '../AddWardModal';
 import { AdmittedPatientsList } from '../AdmittedPatientsList';
 import { AddVitalsModal } from '../AddVitalsModal';
 import { AddDoctorRoundModal } from '../AddDoctorRoundModal';
+import { AddMedicineModal } from '../AddMedicineModal';
 
 const drawerWidth = 280;
 
@@ -91,6 +92,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
   const [openAddDoctorRound, setOpenAddDoctorRound] = useState(false);
   const [openPharmacy, setOpenPharmacy] = useState(false);
   const [openBilling, setOpenBilling] = useState(false);
+  const [openAddMedicine, setOpenAddMedicine] = useState(false);
   const [patientIdInput, setPatientIdInput] = useState('');
   const [admitRefreshKey, setAdmitRefreshKey] = useState(0);
   const navigate = useNavigate();
@@ -268,7 +270,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
               <ListItemButton
                 sx={{ borderRadius: 2, mb: 0.5 }}
                 onClick={() => navigate('/ipd/beds')}
-                selected={location.pathname === '/ipd/beds'}
+                selected={location.pathname.startsWith('/ipd/beds')}
               >
                 <ListItemIcon><Assignment /></ListItemIcon>
                 <ListItemText primary="IPD Beds" />
@@ -311,6 +313,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
                 selected={location.pathname.startsWith('/pharmacy/sales')}
               >
                 <ListItemText primary="Sales" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => setOpenAddMedicine(true)}
+              >
+                <ListItemText primary="Add Medicine" />
               </ListItemButton>
             </List>
           </Collapse>
@@ -401,6 +409,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
       <AddDoctorRoundModal 
         open={openAddDoctorRound} 
         onClose={() => setOpenAddDoctorRound(false)} 
+      />
+      <AddMedicineModal 
+        open={openAddMedicine} 
+        onClose={() => setOpenAddMedicine(false)} 
+        onSuccess={() => {
+          // Dispatch a custom event to notify the medicines page to refresh
+          window.dispatchEvent(new Event('medicine-added'));
+        }} 
       />
     </Box>
   );

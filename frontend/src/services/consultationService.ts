@@ -41,8 +41,8 @@ export class ConsultationService {
   }
 
   async getConsultationsByPatientId(patientId: string | number): Promise<Consultation[]> {
-    const response = await apiService.get<ApiResponse<Consultation[]>>(`/opd/consultations/history/${patientId}`);
-    return response.data.data;
+    const response = await apiService.get(`/opd/consultations/history/${patientId}`);
+    return response.data; // Backend returns a plain array
   }
 
   async downloadPatientHistoryPdf(patientId: string | number): Promise<Blob> {

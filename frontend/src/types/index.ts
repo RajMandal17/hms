@@ -55,16 +55,29 @@ export interface Appointment {
   updatedAt: string;
 }
 
+export interface Medicine {
+  name: string;
+  dosage?: string | null;
+  frequency?: string | null;
+  duration?: string | null;
+}
+
 export interface Consultation {
   id: number;
   appointmentId: number;
-  diagnosis: string;
-  prescription: string;
-  notes: string;
-  followUpDate: string;
+  patientName?: string;
+  patientId?: number;
+  doctorName?: string;
+  symptoms?: string;
+  diagnosis?: string;
+  notes?: string;
+  medicines?: Medicine[];
+  prescription?: string;
+  consultationTime?: string;
+  followUpDate?: string | null;
   appointment?: Appointment;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ApiResponse<T> {

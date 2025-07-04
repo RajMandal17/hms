@@ -13,4 +13,5 @@ public interface MedicineBatchService {
 
     List<MedicineBatch> getLowStockBatches(int threshold);
     List<MedicineBatch> getExpiringBatches(int daysAhead);
+    List<MedicineBatch> getAllBatches();
 }

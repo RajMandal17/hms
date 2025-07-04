@@ -1,4 +1,3 @@
-
 package com.task.hms.pharmacy.service.impl;
 
 import com.task.hms.pharmacy.model.Medicine;
@@ -41,12 +40,16 @@ public class MedicineBatchServiceImpl implements MedicineBatchService {
 
     @Override
     public MedicineBatch addBatchToMedicine(Long medicineId, MedicineBatch batch) {
-        Optional<Medicine> medicine = medicineRepository.findById(medicineId);
-        if (medicine.isPresent()) {
-            batch.setMedicine(medicine.get());
-            return batchRepository.save(batch);
+        // Do not overwrite the medicine if already set by the controller
+        if (batch.getMedicine() == null) {
+            Optional<Medicine> medicine = medicineRepository.findById(medicineId);
+            if (medicine.isPresent()) {
+                batch.setMedicine(medicine.get());
+            } else {
+                return null;
+            }
         }
-        return null;
+        return batchRepository.save(batch);
     }
 
     @Override
@@ -55,11 +58,17 @@ public class MedicineBatchServiceImpl implements MedicineBatchService {
             return null;
         }
         batch.setId(batchId);
+        // Do not overwrite the medicine if already set by the controller
         return batchRepository.save(batch);
     }
 
     @Override
     public void deleteBatch(Long batchId) {
         batchRepository.deleteById(batchId);
+    }
+
+    @Override
+    public List<MedicineBatch> getAllBatches() {
+        return batchRepository.findAll();
     }
 }
