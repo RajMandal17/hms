@@ -354,6 +354,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
               </ListItemButton>
             </List>
           </Collapse>
+
+          {/* ADMIN ONLY: Create User */}
+          {user && (user.role === 'ADMIN' || (user.roles && user.roles.includes('ADMIN'))) && (
+            <ListItemButton
+              sx={{ borderRadius: 2, mb: 0.5 }}
+              onClick={() => navigate('/register')}
+              selected={location.pathname === '/register'}
+            >
+              <ListItemIcon><AccountCircle /></ListItemIcon>
+              <ListItemText primary="Create User" />
+            </ListItemButton>
+          )}
         </List>
       </Box>
 

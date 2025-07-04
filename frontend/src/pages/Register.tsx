@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+
+  import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   Box,
   Button,
@@ -17,14 +19,35 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { Activity } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const roles = [
   { value: 'DOCTOR', label: 'Doctor' },
   { value: 'NURSE', label: 'Nurse' },
+  { value: 'PHARMACIST', label: 'Pharmacist' },
   { value: 'RECEPTIONIST', label: 'Receptionist' },
 ];
 
 export const Register: React.FC = () => {
+  const { user } = useAuth();
+  // If not admin, block access
+  if (!user || !(user.role === 'ADMIN' || (user.roles && user.roles.includes('ADMIN')))) {
+    return (
+      <Container component="main" maxWidth="sm">
+        <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
+            <Typography component="h1" variant="h5" color="error" align="center">
+              Access Denied
+            </Typography>
+            <Typography align="center" sx={{ mt: 2 }}>
+              Only admins can register new users.
+            </Typography>
+          </Paper>
+        </Box>
+      </Container>
+    );
+  }
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -35,14 +58,14 @@ export const Register: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+ 
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === 'roles') {
-      setFormData({ ...formData, roles: [value] });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData({ ...formData, [name]: value });
+  };
+  const handleRoleChange = (e: SelectChangeEvent<string>) => {
+    setFormData({ ...formData, roles: [e.target.value] });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,7 +135,7 @@ export const Register: React.FC = () => {
               name="username"
               label="Username"
               value={formData.username}
-              onChange={handleChange}
+              onChange={handleInputChange}
               disabled={loading}
             />
             <TextField
@@ -123,7 +146,7 @@ export const Register: React.FC = () => {
               label="Email Address"
               type="email"
               value={formData.email}
-              onChange={handleChange}
+              onChange={handleInputChange}
               disabled={loading}
             />
             <TextField
@@ -134,7 +157,7 @@ export const Register: React.FC = () => {
               label="Password"
               type="password"
               value={formData.password}
-              onChange={handleChange}
+              onChange={handleInputChange}
               disabled={loading}
             />
             <FormControl fullWidth margin="normal">
@@ -145,7 +168,7 @@ export const Register: React.FC = () => {
                 name="roles"
                 value={formData.roles[0]}
                 label="Role"
-                onChange={handleChange}
+                onChange={handleRoleChange}
                 disabled={loading}
               >
                 {roles.map((role) => (

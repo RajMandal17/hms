@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.util.AntPathMatcher;
 
 import java.io.IOException;
 
@@ -52,15 +53,33 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
         String method = request.getMethod();
-        // Only skip JWT filter for truly public endpoints
+        
+        AntPathMatcher pathMatcher = new AntPathMatcher();
+        String[] excludedPaths = {
+            "/api/auth/**",
+            "/api/users/register",
+            "/swagger-ui.html",
+            "/swagger-ui/",
+            "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs/",
+            "/v3/api-docs/**",
+            "/api-docs",
+            "/api-docs/",
+            "/api-docs/**",
+            "/actuator/health",
+            "/actuator/**",
+            "/uploads/patient-photos/**"
+        };
         // Allow GET for OPD endpoints, but require JWT for POST/PUT/DELETE
-        if (path.startsWith("/api/opd/") && "GET".equalsIgnoreCase(method)) {
+        if (pathMatcher.match("/api/opd/**", path) && "GET".equalsIgnoreCase(method)) {
             return true;
         }
-        return path.startsWith("/api/auth/") ||
-               path.startsWith("/api/users/register") ||
-               path.startsWith("/swagger-ui/") ||
-               path.startsWith("/v3/api-docs/") ||
-               path.startsWith("/actuator/health");
+        for (String pattern : excludedPaths) {
+            if (pathMatcher.match(pattern, path)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
