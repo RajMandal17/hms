@@ -15,4 +15,6 @@ public interface BillService {
     Bill addBillItem(Long billId, com.task.hms.billing.model.BillItem item);
     List<Bill> getPendingBills();
     BillingSummary getBillingSummary();
+    Bill getConsolidatedIPDBill(Long admissionId);
+    Bill finalizeConsolidatedIPDBill(Long admissionId);
 }

@@ -275,6 +275,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
                 <ListItemIcon><Assignment /></ListItemIcon>
                 <ListItemText primary="IPD Beds" />
               </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/ipd/billing')}
+                selected={location.pathname === '/ipd/billing'}
+              >
+                <ListItemIcon><ReceiptLong /></ListItemIcon>
+                <ListItemText primary="IPD Billing" />
+              </ListItemButton>
             </List>
           </Collapse>
 

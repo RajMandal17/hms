@@ -26,6 +26,7 @@ import { IPDBeds } from './pages/IPDBeds';
 import { BrowserRouter } from 'react-router-dom';
 import BillingRefunds from './pages/BillingRefunds';
 import RefundAuditLogPage from './pages/RefundAuditLogPage';
+import IPDBilling from './pages/IPDBilling';
 
 function App() {
   return (
@@ -195,6 +196,16 @@ function App() {
                 <ProtectedRoute requiredRoles={['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']}>
                   <AppLayout>
                     <IPDBeds />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ipd/billing"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'ACCOUNTANT', 'RECEPTIONIST']}>
+                  <AppLayout>
+                    <IPDBilling />
                   </AppLayout>
                 </ProtectedRoute>
               }
