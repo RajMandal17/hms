@@ -39,7 +39,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**", "/api/users/register", "/swagger-ui/**", "/v3/api-docs/**", "/actuator/health").permitAll()
+                .requestMatchers("/api/auth/**", "/api/users/register", "/swagger-ui.html", "/swagger-ui/", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/", "/v3/api-docs/**", "/api-docs", "/api-docs/", "/api-docs/**", "/actuator/health", "/actuator/**").permitAll()
                 // Allow unauthenticated access to patient photos
                 .requestMatchers("/uploads/patient-photos/**").permitAll()
                 // Allow GET for all OPD endpoints

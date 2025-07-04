@@ -29,6 +29,8 @@ public class Consultation {
     @Lob
     private String medicinesJson;
 
+    private String prescriptionStatus; // e.g., PENDING, FULFILLED
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getAppointmentId() { return appointmentId; }
@@ -49,4 +51,6 @@ public class Consultation {
     public void setFollowUpDate(String followUpDate) { this.followUpDate = followUpDate; }
     public String getMedicinesJson() { return medicinesJson; }
     public void setMedicinesJson(String medicinesJson) { this.medicinesJson = medicinesJson; }
+    public String getPrescriptionStatus() { return prescriptionStatus; }
+    public void setPrescriptionStatus(String prescriptionStatus) { this.prescriptionStatus = prescriptionStatus; }
 }
