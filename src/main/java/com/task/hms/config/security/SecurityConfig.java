@@ -52,6 +52,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/ipd/vitals/**").hasRole("NURSE")
                 // Restrict IPD doctor rounds endpoints to DOCTOR role
                 .requestMatchers("/api/ipd/rounds/**").hasRole("DOCTOR")
+                // Allow POST for adding medicines to ADMIN, PHARMACIST, and NURSE roles
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pharmacy/medicines").hasAnyRole("ADMIN", "PHARMACIST", "NURSE")
+                // Allow POST for adding batches to ADMIN, PHARMACIST, and NURSE roles
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pharmacy/batches").hasAnyRole("ADMIN", "PHARMACIST", "NURSE")
+                // Allow PUT for updating batches to ADMIN, PHARMACIST, and NURSE roles
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/pharmacy/batches/**").hasAnyRole("ADMIN", "PHARMACIST", "NURSE")
                 // All other requests require authentication
                 .anyRequest().authenticated()
             )

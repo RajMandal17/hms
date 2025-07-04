@@ -1,5 +1,6 @@
 package com.task.hms.pharmacy.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -11,6 +12,7 @@ public class MedicineBatch {
 
     @ManyToOne
     @JoinColumn(name = "medicine_id")
+    @JsonBackReference
     private Medicine medicine;
 
     private String batchNumber;
@@ -36,4 +38,8 @@ public class MedicineBatch {
     public void setSalePrice(Double salePrice) { this.salePrice = salePrice; }
     public LocalDate getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
+
+    public Long getMedicineId() {
+        return medicine != null ? medicine.getId() : null;
+    }
 }

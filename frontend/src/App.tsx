@@ -99,7 +99,7 @@ function App() {
             <Route
               path="/pharmacy/medicines"
               element={
-                <ProtectedRoute requiredRoles={['ADMIN', 'PHARMACIST']}>
+                <ProtectedRoute requiredRoles={['ADMIN', 'PHARMACIST', 'NURSE']}>
                   <AppLayout>
                     <PharmacyMedicines />
                   </AppLayout>
@@ -170,7 +170,7 @@ function App() {
             <Route
               path="/ipd/beds"
               element={
-                <ProtectedRoute requiredRoles={['ADMIN', 'NURSE', 'RECEPTIONIST']}>
+                <ProtectedRoute requiredRoles={['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']}>
                   <AppLayout>
                     <IPDBeds />
                   </AppLayout>
