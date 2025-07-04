@@ -355,6 +355,30 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
             </List>
           </Collapse>
 
+          {/* Billing Refunds */}
+          {(user && (user.role === 'ADMIN' || user.role === 'PHARMACIST' || (user.roles && (user.roles.includes('ADMIN') || user.roles.includes('PHARMACIST'))))) && (
+            <ListItemButton
+              sx={{ borderRadius: 2, mb: 0.5 }}
+              onClick={() => navigate('/billing/refunds')}
+              selected={location.pathname === '/billing/refunds'}
+            >
+              <ListItemIcon><ReceiptLong /></ListItemIcon>
+              <ListItemText primary="Refunds" />
+            </ListItemButton>
+          )}
+
+          {/* Billing Refund Audit Logs (ADMIN only) */}
+          {user && (user.role === 'ADMIN' || (user.roles && user.roles.includes('ADMIN'))) && (
+            <ListItemButton
+              sx={{ borderRadius: 2, mb: 0.5 }}
+              onClick={() => navigate('/billing/refund-audit')}
+              selected={location.pathname === '/billing/refund-audit'}
+            >
+              <ListItemIcon><History /></ListItemIcon>
+              <ListItemText primary="Refund Audit Logs" />
+            </ListItemButton>
+          )}
+
           {/* ADMIN ONLY: Create User */}
           {user && (user.role === 'ADMIN' || (user.roles && user.roles.includes('ADMIN'))) && (
             <ListItemButton
