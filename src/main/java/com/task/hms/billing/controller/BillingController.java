@@ -8,6 +8,8 @@ import com.task.hms.billing.service.BillService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 
@@ -62,5 +64,22 @@ public class BillingController {
         Bill updated = billService.addBillItem(id, item);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
+
+    // Consolidated IPD Bill: Get all charges for an admission
+    @GetMapping("/ipd/consolidated/{admissionId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('BILLING')")
+    public ResponseEntity<Bill> getConsolidatedIPDBill(@PathVariable Long admissionId) {
+        Bill bill = billService.getConsolidatedIPDBill(admissionId);
+        return bill != null ? ResponseEntity.ok(bill) : ResponseEntity.notFound().build();
+    }
+
+    // Finalize and create consolidated bill on discharge
+    @PostMapping("/ipd/consolidated/{admissionId}/finalize")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('BILLING')")
+    public ResponseEntity<Bill> finalizeConsolidatedIPDBill(@PathVariable Long admissionId) {
+        Bill bill = billService.finalizeConsolidatedIPDBill(admissionId);
+        return bill != null ? ResponseEntity.ok(bill) : ResponseEntity.notFound().build();
+    }
+
     // TODO: Add PDF export endpoint
 }
