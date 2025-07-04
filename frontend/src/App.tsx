@@ -24,6 +24,8 @@ import BillingPayments from './pages/BillingPayments';
 import BillingInsuranceClaims from './pages/BillingInsuranceClaims';
 import { IPDBeds } from './pages/IPDBeds';
 import { BrowserRouter } from 'react-router-dom';
+import BillingRefunds from './pages/BillingRefunds';
+import RefundAuditLogPage from './pages/RefundAuditLogPage';
 
 function App() {
   return (
@@ -163,6 +165,26 @@ function App() {
                 <ProtectedRoute requiredRoles={['ADMIN', 'ACCOUNTANT']}>
                   <AppLayout>
                     <BillingInsuranceClaims />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billing/refunds"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'PHARMACIST']}>
+                  <AppLayout>
+                    <BillingRefunds />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billing/refund-audit"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN']}>
+                  <AppLayout>
+                    <RefundAuditLogPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
