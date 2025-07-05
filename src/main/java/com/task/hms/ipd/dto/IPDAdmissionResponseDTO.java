@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class IPDAdmissionResponseDTO {
     private Long id;
     private Long patientId;
+    private String patientName; // Added for frontend display
     private Long doctorId;
     private Long wardId;
     private Long bedId;
@@ -21,6 +22,8 @@ public class IPDAdmissionResponseDTO {
     public void setId(Long id) { this.id = id; }
     public Long getPatientId() { return patientId; }
     public void setPatientId(Long patientId) { this.patientId = patientId; }
+    public String getPatientName() { return patientName; }
+    public void setPatientName(String patientName) { this.patientName = patientName; }
     public Long getDoctorId() { return doctorId; }
     public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
     public Long getWardId() { return wardId; }

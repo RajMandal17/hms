@@ -15,6 +15,8 @@ public interface BillService {
     InsuranceClaim claimInsurance(Long billId, InsuranceClaim claim);
     List<Bill> getAllBills();
     Bill addBillItem(Long billId, com.task.hms.billing.model.BillItem item);
+    Bill updateBillItem(Long itemId, com.task.hms.billing.model.BillItem updatedItem);
+    Bill deleteBillItem(Long itemId);
     List<Bill> getPendingBills();
     BillingSummary getBillingSummary();
     Bill getConsolidatedIPDBill(Long admissionId);

@@ -7,6 +7,7 @@ import com.task.hms.ipd.dto.BedStatus;
 import com.task.hms.ipd.repository.IPDAdmissionRepository;
 import com.task.hms.ipd.repository.IPDBedRepository;
 import com.task.hms.ipd.service.IPDAdmissionService;
+import com.task.hms.opd.repository.PatientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,9 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
 
     @Autowired
     private IPDBedRepository bedRepository;
+
+    @Autowired
+    private PatientRepository patientRepository;
 
     @Override
     @Transactional
@@ -85,6 +89,16 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
         IPDAdmissionResponseDTO dto = new IPDAdmissionResponseDTO();
         dto.setId(admission.getId());
         dto.setPatientId(admission.getPatientId());
+        // Fetch patient name for display
+        if (admission.getPatientId() != null) {
+            patientRepository.findById(admission.getPatientId())
+                .ifPresentOrElse(
+                    p -> dto.setPatientName(p.getName()),
+                    () -> dto.setPatientName("Unknown")
+                );
+        } else {
+            dto.setPatientName("Unknown");
+        }
         dto.setDoctorId(admission.getDoctorId());
         dto.setWardId(admission.getWardId());
         dto.setBedId(admission.getBed() != null ? admission.getBed().getId() : null);

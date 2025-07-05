@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collections;
+import java.util.EnumSet;
 
 @Configuration
 public class AdminUserInitializer {
@@ -23,11 +24,21 @@ public class AdminUserInitializer {
     private PasswordEncoder passwordEncoder;
 
     @Bean
-    public CommandLineRunner createAdminUserIfNotExists() {
+    public CommandLineRunner createAdminUserAndRolesIfNotExists() {
         return args -> {
+            // Ensure all roles from RoleType exist in DB
+            for (RoleType roleType : EnumSet.allOf(RoleType.class)) {
+                roleRepository.findByName(roleType).orElseGet(() -> {
+                    Role role = new Role();
+                    role.setName(roleType);
+                    return roleRepository.save(role);
+                });
+            }
+
+            // Ensure admin user exists
             if (!userRepository.existsByUsername("admin")) {
                 Role adminRole = roleRepository.findByName(RoleType.ADMIN)
-                        .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
+                        .orElseThrow(() -> new RuntimeException("ADMIN role not found (should never happen)"));
                 User admin = new User();
                 admin.setUsername("admin");
                 admin.setEmail("admin@hms.com");
