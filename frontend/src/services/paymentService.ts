@@ -2,7 +2,7 @@ import { apiService as api } from './api';
 
 export interface Payment {
   id?: number;
-  bill?: number;
+  bill?: { id: number };
   patientId?: number;
   appointmentId?: number;
   amount: number;

@@ -63,7 +63,7 @@ const BillingRefunds: React.FC = () => {
             {bills.map(bill => (
               <tr key={bill.id} className={selectedBill?.id === bill.id ? 'bg-gray-100' : ''}>
                 <td className="border px-2">{bill.id}</td>
-                <td className="border px-2">{bill.patientId}</td>
+                <td className="border px-2">{bill.patientName || '-'}</td>
                 <td className="border px-2">{bill.totalAmount}</td>
                 <td className="border px-2">{bill.paidAmount}</td>
                 <td className="border px-2">{bill.status}</td>

@@ -2,6 +2,7 @@ package com.task.hms.billing.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 public class Payment {
@@ -11,6 +12,7 @@ public class Payment {
 
     @ManyToOne
     @JoinColumn(name = "bill_id")
+    @JsonBackReference
     private Bill bill;
 
     private Long patientId;
@@ -39,4 +41,14 @@ public class Payment {
     public void setReference(String reference) { this.reference = reference; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Payment)) return false;
+        Payment other = (Payment) o;
+        return id != null && id.equals(other.id);
+    }
+    @Override
+    public int hashCode() { return 31; }
 }

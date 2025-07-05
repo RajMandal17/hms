@@ -48,16 +48,18 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/user/doctors", "/api/ipd/wards", "/api/ipd/beds").permitAll()
                 // TEMP: Allow GET for pharmacy and billing alerts for debugging
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pharmacy/batches/low-stock", "/api/pharmacy/batches/expiring", "/api/billing/bills/pending").permitAll()
-                // Restrict IPD vitals endpoints to NURSE role
-                .requestMatchers("/api/ipd/vitals/**").hasRole("NURSE")
-                // Restrict IPD doctor rounds endpoints to DOCTOR role
-                .requestMatchers("/api/ipd/rounds/**").hasRole("DOCTOR")
+                // Restrict IPD vitals endpoints to NURSE or ADMIN role
+                .requestMatchers("/api/ipd/vitals/**").hasAnyRole("NURSE", "ADMIN")
+                // Restrict IPD doctor rounds endpoints to DOCTOR or ADMIN role
+                .requestMatchers("/api/ipd/rounds/**").hasAnyRole("DOCTOR", "ADMIN")
                 // Allow POST for adding medicines to ADMIN, PHARMACIST, and NURSE roles
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pharmacy/medicines").hasAnyRole("ADMIN", "PHARMACIST", "NURSE")
                 // Allow POST for adding batches to ADMIN, PHARMACIST, and NURSE roles
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pharmacy/batches").hasAnyRole("ADMIN", "PHARMACIST", "NURSE")
                 // Allow PUT for updating batches to ADMIN, PHARMACIST, and NURSE roles
                 .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/pharmacy/batches/**").hasAnyRole("ADMIN", "PHARMACIST", "NURSE")
+                // Allow POST for recording payments to ADMIN, ACCOUNTANT, and CASHIER roles
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/payments/record").hasAnyRole("ADMIN", "ACCOUNTANT", "CASHIER")
                 // All other requests require authentication
                 .anyRequest().authenticated()
             )
