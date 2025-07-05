@@ -77,6 +77,20 @@ public class BillingController {
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 
+    // Update a BillItem (amount, description, etc.)
+    @PutMapping("/bills/items/{itemId}")
+    public ResponseEntity<Bill> updateBillItem(@PathVariable Long itemId, @RequestBody com.task.hms.billing.model.BillItem updatedItem) {
+        Bill updated = billService.updateBillItem(itemId, updatedItem);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
+    // Delete a BillItem
+    @DeleteMapping("/bills/items/{itemId}")
+    public ResponseEntity<Bill> deleteBillItem(@PathVariable Long itemId) {
+        Bill updated = billService.deleteBillItem(itemId);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
     // Consolidated IPD Bill: Get all charges for an admission
     @GetMapping("/ipd/consolidated/{admissionId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('BILLING')")
@@ -93,5 +107,6 @@ public class BillingController {
         return bill != null ? ResponseEntity.ok(bill) : ResponseEntity.notFound().build();
     }
 
-    // TODO: Add PDF export endpoint
+  
+    
 }

@@ -56,6 +56,8 @@ export const getAllBills = () => api.get('/billing/bills');
 export const makePayment = (billId: number, payment: Payment) => api.post(`/billing/bills/${billId}/payment`, payment);
 export const claimInsurance = (billId: number, claim: InsuranceClaim) => api.post(`/billing/bills/${billId}/insurance-claim`, claim);
 export const addBillItem = (billId: number, item: BillItem) => api.post(`/billing/bills/${billId}/items`, item);
+export const updateBillItem = (itemId: number, item: BillItem) => api.put(`/billing/bills/items/${itemId}`, item);
+export const deleteBillItem = (itemId: number) => api.delete(`/billing/bills/items/${itemId}`);
 export const getBillingSummary = () => api.get<BillingSummary>('/billing/summary');
 export const getConsolidatedIPDBill = (admissionId: number) => api.get(`/billing/ipd/consolidated/${admissionId}`);
 export const finalizeConsolidatedIPDBill = (admissionId: number) => api.post(`/billing/ipd/consolidated/${admissionId}/finalize`);

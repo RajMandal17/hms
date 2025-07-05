@@ -218,4 +218,38 @@ public class BillServiceImpl implements BillService {
         }
         return dtos;
     }
+
+    @Override
+    public Bill updateBillItem(Long itemId, com.task.hms.billing.model.BillItem updatedItem) {
+        Optional<BillItem> itemOpt = billItemRepository.findById(itemId);
+        if (itemOpt.isEmpty()) return null;
+        BillItem item = itemOpt.get();
+        if (updatedItem.getDescription() != null) item.setDescription(updatedItem.getDescription());
+        if (updatedItem.getAmount() != null) item.setAmount(updatedItem.getAmount());
+        billItemRepository.save(item);
+        Bill bill = item.getBill();
+        // Recalculate total
+        if (bill != null) {
+            double total = bill.getItems() != null ? bill.getItems().stream().mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum() : 0.0;
+            bill.setTotalAmount(total);
+            billRepository.save(bill);
+        }
+        return bill;
+    }
+
+    @Override
+    public Bill deleteBillItem(Long itemId) {
+        Optional<BillItem> itemOpt = billItemRepository.findById(itemId);
+        if (itemOpt.isEmpty()) return null;
+        BillItem item = itemOpt.get();
+        Bill bill = item.getBill();
+        billItemRepository.delete(item);
+        // Recalculate total
+        if (bill != null) {
+            double total = bill.getItems() != null ? bill.getItems().stream().filter(i -> !i.getId().equals(itemId)).mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum() : 0.0;
+            bill.setTotalAmount(total);
+            billRepository.save(bill);
+        }
+        return bill;
+    }
 }

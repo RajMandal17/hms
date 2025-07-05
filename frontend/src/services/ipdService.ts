@@ -14,7 +14,12 @@ export const ipdService = {
   getBedsByWard: (wardId: string) => apiService.get<any>('/ipd/beds').then((res: AxiosResponse<any>) =>
     (res.data as IPDBed[]).filter((b: IPDBed) => b.wardId === Number(wardId))
   ),
-  getAdmissions: () => apiService.get('/ipd/admissions').then((res: AxiosResponse<any>) => res.data),
+  getAdmissions: () => apiService.get('/ipd/admissions').then((res: AxiosResponse<any>) => {
+    // Ensure always returns an array, even if backend returns object with numeric keys
+    const data = res.data;
+    if (Array.isArray(data)) return data;
+    return Object.values(data);
+  }),
   addWard: (data: any) => apiService.post('/ipd/wards', data).then((res: AxiosResponse<any>) => res.data),
   getAvailableBedsByWard: (wardId: string | number) =>
     apiService.get(`/ipd/beds/available`, { wardId }).then((res: AxiosResponse<any>) => res.data),
