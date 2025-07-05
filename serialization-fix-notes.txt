@@ -1,0 +1,13 @@
+// This file documents the serialization fix for Bill, Payment, BillItem, and InsuranceClaim models.
+//
+// Problem: Infinite recursion in JSON serialization due to bidirectional JPA relationships between Bill <-> Payment, Bill <-> BillItem, Bill <-> InsuranceClaim, InsuranceClaim <-> InsuranceClaimDocument, etc.
+//
+// Solution: Annotate the owning side of each relationship with @JsonManagedReference and the inverse side with @JsonBackReference from com.fasterxml.jackson.annotation. This prevents infinite recursion and allows correct serialization of nested objects.
+//
+// Steps:
+// 1. Add @JsonManagedReference to Bill.payments, Bill.items, Bill.insuranceClaim, InsuranceClaim.documents.
+// 2. Add @JsonBackReference to Payment.bill, BillItem.bill, InsuranceClaim.bill, InsuranceClaimDocument.insuranceClaim.
+// 3. Add the necessary import: import com.fasterxml.jackson.annotation.*;
+// 4. Rebuild and test the /api/billing/bills endpoint.
+//
+// See: https://www.baeldung.com/jackson-bidirectional-relationships-and-infinite-recursion

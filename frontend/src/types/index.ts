@@ -28,16 +28,15 @@ export interface AuthResponse {
 
 export interface Patient {
   id: number;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
   address: string;
-  dateOfBirth: string;
-  gender: 'MALE' | 'FEMALE' | 'OTHER';
-  emergencyContact: string;
-  createdAt: string;
-  updatedAt: string;
+  dateOfBirth?: string;
+  gender?: string;
+  emergencyContact?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Appointment {
@@ -103,4 +102,52 @@ export interface DashboardStats {
   todayAppointments: number;
   pendingAppointments: number;
   completedAppointments: number;
+}
+
+export interface WalkInPatient {
+  id?: number;
+  name: string;
+  phone?: string;
+  address?: string;
+}
+
+export interface Bill {
+  id?: number;
+  patientId?: number;
+  walkInPatientId?: number;
+  walkInPatient?: WalkInPatient;
+  billType: string;
+  totalAmount: number;
+  paidAmount?: number;
+  status?: string;
+  items?: BillItem[];
+  payments?: Payment[];
+  insuranceClaim?: InsuranceClaim;
+}
+
+export interface BillItem {
+  id?: number;
+  description: string;
+  amount: number;
+  sourceType?: string;
+  sourceId?: number;
+}
+
+export interface Payment {
+  id?: number;
+  amount: number;
+  mode: string;
+  paidAt?: string;
+  reference?: string;
+  status?: string;
+}
+
+export interface InsuranceClaim {
+  id?: number;
+  tpaName: string;
+  claimNumber: string;
+  claimedAmount: number;
+  approvedAmount?: number;
+  status?: string;
+  remarks?: string;
 }

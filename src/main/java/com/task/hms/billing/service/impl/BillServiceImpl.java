@@ -1,4 +1,3 @@
-// Removed misplaced duplicate getPendingBills method at file top
 package com.task.hms.billing.service.impl;
 
 import com.task.hms.billing.model.Bill;
@@ -17,6 +16,11 @@ import com.task.hms.ipd.repository.IPDPrescriptionRepository;
 import com.task.hms.pharmacy.model.PharmacySale;
 import com.task.hms.pharmacy.repository.PharmacySaleRepository;
 import com.task.hms.billing.model.BillItem;
+import com.task.hms.billing.model.WalkInPatient;
+import com.task.hms.billing.repository.WalkInPatientRepository;
+import com.task.hms.billing.dto.BillDTO;
+import com.task.hms.opd.model.Patient;
+import com.task.hms.opd.repository.PatientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +44,10 @@ public class BillServiceImpl implements BillService {
     private IPDPrescriptionRepository ipdPrescriptionRepository;
     @Autowired
     private PharmacySaleRepository pharmacySaleRepository;
+    @Autowired
+    private WalkInPatientRepository walkInPatientRepository;
+    @Autowired
+    private PatientRepository patientRepository;
 
     @Override
     public BillingSummary getBillingSummary() {
@@ -58,6 +66,12 @@ public class BillServiceImpl implements BillService {
 
     @Override
     public Bill createBill(Bill bill) {
+        // If walk-in, save WalkInPatient and set walkInPatientId
+        if (bill.getPatientId() == null && bill.getWalkInPatient() != null) {
+            WalkInPatient walkIn = bill.getWalkInPatient();
+            walkIn = walkInPatientRepository.save(walkIn);
+            bill.setWalkInPatientId(walkIn.getId());
+        }
         return billRepository.save(bill);
     }
 
@@ -175,5 +189,33 @@ public class BillServiceImpl implements BillService {
             billItemRepository.save(item);
         }
         return saved;
+    }
+
+    @Override
+    public List<BillDTO> getAllBillsAsDTO() {
+        List<Bill> bills = billRepository.findAll();
+        List<BillDTO> dtos = new ArrayList<>();
+        for (Bill bill : bills) {
+            String patientName = null;
+            if (bill.getPatientId() != null) {
+                Patient patient = patientRepository.findById(bill.getPatientId()).orElse(null);
+                if (patient != null) patientName = patient.getName();
+            } else if (bill.getWalkInPatientId() != null) {
+                WalkInPatient walkIn = walkInPatientRepository.findById(bill.getWalkInPatientId()).orElse(null);
+                if (walkIn != null) patientName = walkIn.getName();
+            }
+            dtos.add(new BillDTO(
+                bill.getId(),
+                patientName,
+                bill.getBillType(),
+                bill.getTotalAmount(),
+                bill.getPaidAmount(),
+                bill.getStatus(),
+                bill.getItems(),
+                bill.getPayments(),
+                bill.getInsuranceClaim()
+            ));
+        }
+        return dtos;
     }
 }

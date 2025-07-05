@@ -6,6 +6,11 @@ import { ConsultationService } from '../services/consultationService';
 import { ipdService } from '../services/ipdService';
 import { getSales } from '../services/pharmacySalesService';
 import { Patient, Consultation } from '../types';
+import {
+  getClaimsByPatient,
+  getClaimDocuments,
+  uploadClaimDocument
+} from '../services/insuranceClaimService';
 
 const consultationService = new ConsultationService();
 
@@ -19,11 +24,24 @@ const Billing: React.FC = () => {
   const [patientExpenses, setPatientExpenses] = useState<any[]>([]); // [{type, description, amount}]
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
   const [isWalkIn, setIsWalkIn] = useState<boolean>(false);
-  const [walkInDetails, setWalkInDetails] = useState<any>({ name: '', expenses: [{ description: '', amount: 0 }] });
+  const [walkInDetails, setWalkInDetails] = useState<any>({ name: '', phone: '', address: '', expenses: [{ description: '', amount: 0 }] });
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+  const [insuranceClaims, setInsuranceClaims] = useState<InsuranceClaim[]>([]);
+  const [selectedClaim, setSelectedClaim] = useState<InsuranceClaim | null>(null);
+  const [claimDocuments, setClaimDocuments] = useState<any[]>([]);
+  const [docUploadLoading, setDocUploadLoading] = useState(false);
+  const [docUploadError, setDocUploadError] = useState<string | null>(null);
+  const [docUploadSuccess, setDocUploadSuccess] = useState<string | null>(null);
+  const [billLoading, setBillLoading] = useState(false);
+  const [billError, setBillError] = useState<string | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     patientService.getPatients().then((data: Patient[]) => setPatients(data));
-    getAllBills().then(res => setBills(res.data as Bill[]));
+    getAllBills().then(res => setBills(Array.isArray(res.data) ? res.data : []));
   }, []);
 
   useEffect(() => {
@@ -66,6 +84,46 @@ const Billing: React.FC = () => {
     }
   }, [selectedPatient]);
 
+  // Fetch insurance claims for selected bill
+  useEffect(() => {
+    if (selectedBill) {
+      setClaimLoading(true);
+      setClaimError(null);
+      setInsuranceClaims([]);
+      getClaimsByPatient(selectedBill.patientId ?? 0)
+        .then(res => {
+          // Filter claims for this bill
+          const claims = Array.isArray(res.data) ? res.data.filter((c: any) => c.billId === selectedBill.id) : [];
+          setInsuranceClaims(claims);
+          setClaimLoading(false);
+        })
+        .catch(() => {
+          setClaimError('Failed to fetch insurance claims');
+          setClaimLoading(false);
+        });
+    } else {
+      setInsuranceClaims([]);
+    }
+  }, [selectedBill]);
+
+  // Fetch claim documents when a claim is selected
+  useEffect(() => {
+    if (selectedClaim) {
+      setClaimDocuments([]);
+      getClaimDocuments(selectedClaim.id!)
+        .then(res => setClaimDocuments(Array.isArray(res.data) ? res.data : []))
+        .catch(() => setClaimDocuments([]));
+    } else {
+      setClaimDocuments([]);
+    }
+  }, [selectedClaim]);
+
+  // Reset selectedClaim and claimSuccess when selectedBill changes
+  useEffect(() => {
+    setSelectedClaim(null);
+    setClaimSuccess(null);
+  }, [selectedBill]);
+
   const handleDownloadPdf = async (billId: number) => {
     try {
       const res = await downloadBillPdf(billId);
@@ -81,27 +139,30 @@ const Billing: React.FC = () => {
     }
   };
 
-  const handleMakePayment = async () => {
-    if (!selectedBill || !payment.amount || !payment.mode) return;
-    const paymentData: Payment = {
-      amount: payment.amount,
-      mode: payment.mode,
-      bill: selectedBill.id,
-      patientId: selectedBill.patientId,
-      reference: payment.reference || '',
-    };
-    await recordPayment(paymentData);
-    const res = await getAllBills();
-    setBills(res.data as Bill[]);
-    setPayment({});
-  };
-
   const handleClaimInsurance = async () => {
     if (!selectedBill || !insurance.tpaName || !insurance.claimNumber || !insurance.claimedAmount) return;
     await claimInsurance(selectedBill.id!, insurance as InsuranceClaim);
     const res = await getAllBills();
-    setBills(res.data as Bill[]);
+    setBills(Array.isArray(res.data) ? res.data : []);
     setInsurance({});
+  };
+
+  // Add document upload handler
+  const handleUploadDocument = async (claimId: number, file: File) => {
+    setDocUploadLoading(true);
+    setDocUploadError(null);
+    setDocUploadSuccess(null);
+    try {
+      await uploadClaimDocument(claimId, file);
+      setDocUploadSuccess('Document uploaded successfully');
+      // Refresh documents
+      const res = await getClaimDocuments(claimId);
+      setClaimDocuments(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      setDocUploadError('Failed to upload document');
+    } finally {
+      setDocUploadLoading(false);
+    }
   };
 
   return (
@@ -127,7 +188,7 @@ const Billing: React.FC = () => {
           >
             <option value="">Select Patient</option>
             {patients.map(p => (
-              <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+              <option key={p.id} value={p.id}>{p.name}</option>
             ))}
             <option value="walkin">Walk-in (Pharmacy Only)</option>
           </select>
@@ -135,6 +196,8 @@ const Billing: React.FC = () => {
         {isWalkIn ? (
           <div className="mb-2">
             <input placeholder="Name" value={walkInDetails.name} onChange={e => setWalkInDetails({ ...walkInDetails, name: e.target.value })} className="border p-1 m-1" />
+            <input placeholder="Phone" value={walkInDetails.phone || ''} onChange={e => setWalkInDetails({ ...walkInDetails, phone: e.target.value })} className="border p-1 m-1" />
+            <input placeholder="Address" value={walkInDetails.address || ''} onChange={e => setWalkInDetails({ ...walkInDetails, address: e.target.value })} className="border p-1 m-1" />
             <div>
               <h4 className="font-medium">Expenses</h4>
               {walkInDetails.expenses.map((exp: any, idx: number) => (
@@ -161,11 +224,11 @@ const Billing: React.FC = () => {
           </div>
         ) : selectedPatient && (
           <div className="mb-2">
-            <div className="mb-1">Name: {selectedPatient.firstName} {selectedPatient.lastName}</div>
-            <div className="mb-1">Gender: {selectedPatient.gender}</div>
-            <div className="mb-1">DOB: {selectedPatient.dateOfBirth}</div>
-            <div className="mb-1">Phone: {selectedPatient.phone}</div>
-            <div className="mb-1">Email: {selectedPatient.email}</div>
+            <div className="mb-1">Name: {selectedPatient.name || ''}</div>
+            <div className="mb-1">Gender: {selectedPatient.gender || 'N/A'}</div>
+            <div className="mb-1">DOB: {selectedPatient.dateOfBirth || 'N/A'}</div>
+            <div className="mb-1">Phone: {selectedPatient.phone || 'N/A'}</div>
+            <div className="mb-1">Email: {selectedPatient.email || 'N/A'}</div>
             <h4 className="font-medium mt-2">Expenses</h4>
             <table className="min-w-full border mb-2">
               <thead>
@@ -193,29 +256,52 @@ const Billing: React.FC = () => {
             if (isWalkIn) {
               if (!walkInDetails.name || walkInDetails.expenses.length === 0) return alert('Enter walk-in details and at least one expense');
               const total = walkInDetails.expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
-              const res = await createBill({
-                patientId: undefined,
-                patientName: walkInDetails.name,
-                billType: 'Pharmacy',
-                totalAmount: total,
-                items: walkInDetails.expenses.map((e: any) => ({ description: e.description, amount: e.amount }))
-              } as any);
-              setBills([...bills, res.data as Bill]);
-              setWalkInDetails({ name: '', expenses: [{ description: '', amount: 0 }] });
+              setBillLoading(true);
+              setBillError(null);
+              try {
+                const res = await createBill({
+                  walkInPatient: {
+                    name: walkInDetails.name,
+                    phone: walkInDetails.phone,
+                    address: walkInDetails.address
+                  },
+                  billType: 'Pharmacy',
+                  totalAmount: total,
+                  items: walkInDetails.expenses.map((e: any) => ({ description: e.description, amount: e.amount }))
+                } as any);
+                setBills(Array.isArray(res.data) ? [...bills, ...res.data] : [...bills]);
+                setWalkInDetails({ name: '', phone: '', address: '', expenses: [{ description: '', amount: 0 }] });
+              } catch (e) {
+                setBillError('Failed to create bill');
+              } finally {
+                setBillLoading(false);
+              }
             } else if (selectedPatient) {
               if (patientExpenses.length === 0) return alert('No expenses found for this patient');
-              const res = await createBill({
-                patientId: selectedPatient.id,
-                billType: 'All',
-                totalAmount: totalExpenses,
-                items: patientExpenses.map(e => ({ description: `${e.type}: ${e.description}`, amount: e.amount }))
-              } as any);
-              setBills([...bills, res.data as Bill]);
-              setSelectedPatient(null);
+              setBillLoading(true);
+              setBillError(null);
+              try {
+                const res = await createBill({
+                  patientId: selectedPatient.id,
+                  billType: 'All',
+                  totalAmount: totalExpenses,
+                  items: patientExpenses.map(e => ({ description: `${e.type}: ${e.description}`, amount: e.amount }))
+                } as any);
+                setBills(Array.isArray(res.data) ? [...bills, ...res.data] : [...bills]);
+                setSelectedPatient(null);
+              } catch (e) {
+                setBillError('Failed to create bill');
+              } finally {
+                setBillLoading(false);
+              }
             }
           }}
           className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
-        >Create Bill</button>
+          disabled={billLoading}
+        >
+          {billLoading ? 'Creating Bill...' : 'Create Bill'}
+        </button>
+        {billError && <div className="text-red-500 mt-2">{billError}</div>}
       </div>
       <div className="mb-6">
         <h3 className="font-semibold">All Bills</h3>
@@ -232,22 +318,34 @@ const Billing: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {bills.map(bill => (
-              <tr key={bill.id} className={selectedBill?.id === bill.id ? 'bg-gray-100' : ''}>
-                <td className="border px-2">{bill.id}</td>
-                <td className="border px-2">{bill.patientId}</td>
-                <td className="border px-2">{bill.billType}</td>
-                <td className="border px-2">{bill.totalAmount}</td>
-                <td className="border px-2">{bill.paidAmount}</td>
-                <td className="border px-2">{bill.status}</td>
-                <td className="border px-2">
-                  <button onClick={() => setSelectedBill(bill)} className="text-blue-600 mr-2">Select</button>
-                  <button onClick={() => handleDownloadPdf(bill.id!)} className="text-green-600">Download PDF</button>
-                </td>
+            {bills.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-2">No bills found.</td>
               </tr>
-            ))}
+            ) : (
+              bills.map(bill => {
+                // Use patientName from BillDTO for both registered and walk-in
+                const patientDisplay = bill.patientName || '-';
+                return (
+                  <tr key={bill.id} className={selectedBill?.id === bill.id ? 'bg-gray-100' : ''}>
+                    <td className="border px-2">{bill.id}</td>
+                    <td className="border px-2">{patientDisplay}</td>
+                    <td className="border px-2">{bill.billType}</td>
+                    <td className="border px-2">{bill.totalAmount}</td>
+                    <td className="border px-2">{bill.paidAmount}</td>
+                    <td className="border px-2">{bill.status}</td>
+                    <td className="border px-2">
+                      <button onClick={() => setSelectedBill(bill)} className="text-blue-600 mr-2">Select</button>
+                      <button onClick={() => handleDownloadPdf(bill.id!)} className="text-green-600">Download PDF</button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
+        {/* Debug: Show bills data */}
+        {/* <pre className="text-xs text-gray-400">{JSON.stringify(bills, null, 2)}</pre> */}
       </div>
       {selectedBill && (
         <div className="mb-6">
@@ -256,14 +354,137 @@ const Billing: React.FC = () => {
             <h4 className="font-medium">Make Payment</h4>
             <input placeholder="Amount" type="number" value={payment.amount || ''} onChange={e => setPayment({ ...payment, amount: Number(e.target.value) })} className="border p-1 m-1" />
             <input placeholder="Mode" value={payment.mode || ''} onChange={e => setPayment({ ...payment, mode: e.target.value })} className="border p-1 m-1" />
-            <button onClick={handleMakePayment} className="bg-green-500 text-white px-2 py-1 rounded">Pay</button>
+            <button
+              onClick={async () => {
+                setPaymentLoading(true);
+                setPaymentError(null);
+                try {
+                  if (!selectedBill || !payment.amount || !payment.mode) return;
+                  // Fix: Send bill as an object with id for backend compatibility
+                  const paymentData: Payment = {
+                    amount: payment.amount!,
+                    mode: payment.mode!,
+                    bill: selectedBill ? { id: selectedBill.id! } : undefined, // ensure id is number
+                    patientId: selectedBill?.patientId,
+                    reference: payment.reference || '',
+                  };
+                  await recordPayment(paymentData);
+                  const res = await getAllBills();
+                  setBills(Array.isArray(res.data) ? res.data : []);
+                  setPayment({});
+                } catch (e) {
+                  setPaymentError('Failed to make payment');
+                } finally {
+                  setPaymentLoading(false);
+                }
+              }}
+              className="bg-green-500 text-white px-2 py-1 rounded"
+              disabled={paymentLoading}
+            >
+              {paymentLoading ? 'Processing...' : 'Pay'}
+            </button>
+            {paymentError && <span className="text-red-500 ml-2">{paymentError}</span>}
           </div>
           <div className="mb-2">
-            <h4 className="font-medium">Claim Insurance</h4>
-            <input placeholder="TPA Name" value={insurance.tpaName || ''} onChange={e => setInsurance({ ...insurance, tpaName: e.target.value })} className="border p-1 m-1" />
-            <input placeholder="Claim Number" value={insurance.claimNumber || ''} onChange={e => setInsurance({ ...insurance, claimNumber: e.target.value })} className="border p-1 m-1" />
-            <input placeholder="Claimed Amount" type="number" value={insurance.claimedAmount || ''} onChange={e => setInsurance({ ...insurance, claimedAmount: Number(e.target.value) })} className="border p-1 m-1" />
-            <button onClick={handleClaimInsurance} className="bg-purple-500 text-white px-2 py-1 rounded">Claim</button>
+            <h4 className="font-medium">Insurance Claims</h4>
+            {claimLoading && <div className="text-blue-500">Loading claims...</div>}
+            {claimError && <div className="text-red-500">{claimError}</div>}
+            {claimSuccess && <div className="text-green-500">{claimSuccess}</div>}
+            {/* List existing claims for this bill */}
+            {insuranceClaims.length > 0 ? (
+              <table className="min-w-full border mb-2">
+                <thead>
+                  <tr>
+                    <th className="border px-2">TPA Name</th>
+                    <th className="border px-2">Claim Number</th>
+                    <th className="border px-2">Claimed Amount</th>
+                    <th className="border px-2">Status</th>
+                    <th className="border px-2">Remarks</th>
+                    <th className="border px-2">Documents</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {insuranceClaims.map(claim => (
+                    <tr key={claim.id} className={selectedClaim?.id === claim.id ? 'bg-gray-100' : ''}>
+                      <td className="border px-2">{claim.tpaName}</td>
+                      <td className="border px-2">{claim.claimNumber}</td>
+                      <td className="border px-2">{claim.claimedAmount}</td>
+                      <td className="border px-2">{claim.status}</td>
+                      <td className="border px-2">{claim.remarks || '-'}</td>
+                      <td className="border px-2">
+                        <button onClick={() => setSelectedClaim(claim)} className="text-blue-600">View</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div>No insurance claims for this bill.</div>
+            )}
+            {/* Show claim details and document upload if a claim is selected */}
+            {selectedClaim && (
+              <div className="border p-2 mt-2">
+                <div className="font-semibold">Claim #{selectedClaim.id}</div>
+                <div>Status: {selectedClaim.status}</div>
+                <div>Remarks: {selectedClaim.remarks || '-'}</div>
+                <div className="mt-2">
+                  <div className="font-medium">Documents</div>
+                  {claimDocuments.length > 0 ? (
+                    <ul>
+                      {claimDocuments.map(doc => (
+                        <li key={doc.id}>
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{doc.fileName}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div>No documents uploaded.</div>
+                  )}
+                  <div className="mt-2">
+                    <input type="file" onChange={e => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleUploadDocument(selectedClaim.id!, e.target.files[0]);
+                        e.target.value = '';
+                      }
+                    }} disabled={docUploadLoading} />
+                    {docUploadLoading && <span className="text-blue-500 ml-2">Uploading...</span>}
+                    {docUploadError && <span className="text-red-500 ml-2">{docUploadError}</span>}
+                    {docUploadSuccess && <span className="text-green-500 ml-2">{docUploadSuccess}</span>}
+                  </div>
+                </div>
+                <button onClick={() => setSelectedClaim(null)} className="text-gray-600 mt-2">Close</button>
+              </div>
+            )}
+            {/* ...existing claim submission form... */}
+            <div className="mt-4">
+              <h5 className="font-medium">Submit New Insurance Claim</h5>
+              <input placeholder="TPA Name" value={insurance.tpaName || ''} onChange={e => setInsurance({ ...insurance, tpaName: e.target.value })} className="border p-1 m-1" />
+              <input placeholder="Claim Number" value={insurance.claimNumber || ''} onChange={e => setInsurance({ ...insurance, claimNumber: e.target.value })} className="border p-1 m-1" />
+              <input placeholder="Claimed Amount" type="number" value={insurance.claimedAmount || ''} onChange={e => setInsurance({ ...insurance, claimedAmount: Number(e.target.value) })} className="border p-1 m-1" />
+              <button
+                onClick={async () => {
+                  if (!selectedBill || !insurance.tpaName || !insurance.claimNumber || !insurance.claimedAmount) return;
+                  setClaimLoading(true);
+                  setClaimError(null);
+                  setClaimSuccess(null);
+                  try {
+                    await claimInsurance(selectedBill.id!, insurance as InsuranceClaim);
+                    setClaimSuccess('Insurance claim submitted');
+                    // Refresh claims
+                    const res = await getClaimsByPatient(selectedBill.patientId);
+                    const claims = Array.isArray(res.data) ? res.data.filter((c: any) => c.billId === selectedBill.id) : [];
+                    setInsuranceClaims(claims);
+                    setInsurance({});
+                  } catch (e) {
+                    setClaimError('Failed to submit insurance claim');
+                  } finally {
+                    setClaimLoading(false);
+                  }
+                }}
+                className="bg-purple-500 text-white px-2 py-1 rounded"
+                disabled={claimLoading}
+              >Claim</button>
+            </div>
           </div>
         </div>
       )}

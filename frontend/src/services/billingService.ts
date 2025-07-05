@@ -6,7 +6,8 @@ export const downloadBillPdf = (billId: number) => api.get(`/billing/bills/${bil
 
 export interface Bill {
   id?: number;
-  patientId: number;
+  patientId?: number;
+  walkInPatientId?: number;
   billType: string;
   totalAmount: number;
   paidAmount?: number;
@@ -39,6 +40,7 @@ export interface InsuranceClaim {
   claimedAmount: number;
   approvedAmount?: number;
   status?: string;
+  remarks?: string;
 }
 
 export interface BillingSummary {

@@ -4,6 +4,8 @@ import com.task.hms.billing.model.Bill;
 import com.task.hms.billing.model.Payment;
 import com.task.hms.billing.model.InsuranceClaim;
 import com.task.hms.billing.model.BillingSummary;
+import com.task.hms.billing.dto.BillDTO;
+import java.util.ArrayList;
 import java.util.List;
 
 public interface BillService {
@@ -17,4 +19,5 @@ public interface BillService {
     BillingSummary getBillingSummary();
     Bill getConsolidatedIPDBill(Long admissionId);
     Bill finalizeConsolidatedIPDBill(Long admissionId);
+    List<BillDTO> getAllBillsAsDTO();
 }

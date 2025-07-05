@@ -4,7 +4,9 @@ import com.task.hms.billing.model.Bill;
 import com.task.hms.billing.model.Payment;
 import com.task.hms.billing.model.InsuranceClaim;
 import com.task.hms.billing.model.BillingSummary;
+import com.task.hms.billing.dto.BillDTO;
 import com.task.hms.billing.service.BillService;
+import com.task.hms.opd.repository.PatientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,9 @@ import java.util.List;
 public class BillingController {
     @Autowired
     private BillService billService;
+
+    @Autowired
+    private PatientRepository patientRepository;
 
     @GetMapping("/summary")
     public ResponseEntity<BillingSummary> getBillingSummary() {
@@ -53,9 +58,16 @@ public class BillingController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/bills/{id}/insurance-claim")
+    public ResponseEntity<InsuranceClaim> getInsuranceClaimForBill(@PathVariable Long id) {
+        Bill bill = billService.getBillById(id);
+        if (bill == null || bill.getInsuranceClaim() == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(bill.getInsuranceClaim());
+    }
+
     @GetMapping("/bills")
-    public ResponseEntity<List<Bill>> getAllBills() {
-        return ResponseEntity.ok(billService.getAllBills());
+    public ResponseEntity<List<BillDTO>> getAllBills() {
+        return ResponseEntity.ok(billService.getAllBillsAsDTO());
     }
 
     // Add BillItem to a Bill (for OPD/IPD/Pharmacy charges)
