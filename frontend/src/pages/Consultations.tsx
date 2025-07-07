@@ -35,15 +35,18 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { Consultation, Appointment } from '../types';
+import { Consultation, Appointment, Medicine } from '../types';
 import { consultationService } from '../services/consultationService';
 import { appointmentService } from '../services/appointmentService';
 import { useAuth } from '../contexts/AuthContext';
+import { getMedicines } from '../services/pharmacyService';
 
 export const Consultations: React.FC = () => {
   const { hasAnyRole } = useAuth();
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [medicineOptions, setMedicineOptions] = useState<string[]>([]);
+  const [medicineList, setMedicineList] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -76,6 +79,11 @@ export const Consultations: React.FC = () => {
 
   useEffect(() => {
     loadInitialData();
+    // Fetch medicine names and details for autocomplete
+    getMedicines().then(meds => {
+      setMedicineOptions(meds.map(m => m.name));
+      setMedicineList(meds);
+    });
   }, []);
 
   useEffect(() => {
@@ -365,53 +373,76 @@ export const Consultations: React.FC = () => {
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle1" sx={{ mb: 1 }}>Medicines</Typography>
-                {formData.medicines.map((med, idx) => (
-                  <Grid container spacing={1} key={idx} alignItems="center" sx={{ mb: 1 }}>
-                    <Grid item xs={3}>
-                      <TextField
-                        label="Name"
-                        value={med.name}
-                        onChange={e => handleMedicineChange(idx, 'name', e.target.value)}
-                        disabled={isViewing}
-                        fullWidth
-                      />
+                {formData.medicines.map((med, idx) => {
+                  const selectedMed = medicineList.find(m => m.name === med.name);
+                  return (
+                    <Grid container spacing={1} key={idx} alignItems="center" sx={{ mb: 1 }}>
+                      <Grid item xs={3}>
+                        <Autocomplete
+                          freeSolo
+                          options={medicineOptions}
+                          value={med.name}
+                          onInputChange={(e, newValue) => handleMedicineChange(idx, 'name', newValue)}
+                          renderInput={(params) => (
+                            <TextField {...params} label="Name" disabled={isViewing} fullWidth />
+                          )}
+                        />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField
+                          label="Dose"
+                          value={med.dose}
+                          onChange={e => handleMedicineChange(idx, 'dose', e.target.value)}
+                          disabled={isViewing}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField
+                          label="Frequency"
+                          value={med.frequency}
+                          onChange={e => handleMedicineChange(idx, 'frequency', e.target.value)}
+                          disabled={isViewing}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField
+                          label="Duration"
+                          value={med.duration}
+                          onChange={e => handleMedicineChange(idx, 'duration', e.target.value)}
+                          disabled={isViewing}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={1}>
+                        <TextField
+                          label="Qty"
+                          type="number"
+                          value={med.quantity || ''}
+                          onChange={e => handleMedicineChange(idx, 'quantity', e.target.value)}
+                          disabled={isViewing}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField
+                          label="Price"
+                          value={selectedMed && selectedMed.price ? `₹${selectedMed.price}` : ''}
+                          disabled
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={2}>
+                        {!isViewing && (
+                          <Button color="error" onClick={() => handleRemoveMedicine(idx)} disabled={formData.medicines.length === 1}>
+                            Remove
+                          </Button>
+                        )}
+                      </Grid>
                     </Grid>
-                    <Grid item xs={2}>
-                      <TextField
-                        label="Dose"
-                        value={med.dose}
-                        onChange={e => handleMedicineChange(idx, 'dose', e.target.value)}
-                        disabled={isViewing}
-                        fullWidth
-                      />
-                    </Grid>
-                    <Grid item xs={3}>
-                      <TextField
-                        label="Frequency"
-                        value={med.frequency}
-                        onChange={e => handleMedicineChange(idx, 'frequency', e.target.value)}
-                        disabled={isViewing}
-                        fullWidth
-                      />
-                    </Grid>
-                    <Grid item xs={2}>
-                      <TextField
-                        label="Duration"
-                        value={med.duration}
-                        onChange={e => handleMedicineChange(idx, 'duration', e.target.value)}
-                        disabled={isViewing}
-                        fullWidth
-                      />
-                    </Grid>
-                    <Grid item xs={2}>
-                      {!isViewing && (
-                        <Button color="error" onClick={() => handleRemoveMedicine(idx)} disabled={formData.medicines.length === 1}>
-                          Remove
-                        </Button>
-                      )}
-                    </Grid>
-                  </Grid>
-                ))}
+                  );
+                })}
                 {!isViewing && (
                   <Button variant="outlined" onClick={handleAddMedicine} sx={{ mt: 1 }}>
                     Add Medicine

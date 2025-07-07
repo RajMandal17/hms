@@ -42,6 +42,9 @@ public class PharmacyBatchController {
         batch.setBatchNumber(req.getBatchNumber());
         batch.setExpiryDate(LocalDate.parse(req.getExpiryDate()));
         batch.setQuantity(req.getStock());
+        batch.setPurchasePrice(req.getPurchasePrice());
+        batch.setSalePrice(req.getSalePrice());
+        batch.setCreatedAt(req.getCreatedAt() != null && !req.getCreatedAt().isEmpty() ? LocalDate.parse(req.getCreatedAt()) : LocalDate.now());
         // Set the medicine entity from the medicineId
         batch.setMedicine(medicineRepository.findById(req.getMedicineId()).orElseThrow(() -> new IllegalArgumentException("Invalid medicineId")));
         return batchService.addBatchToMedicine(req.getMedicineId(), batch);
@@ -56,6 +59,9 @@ public class PharmacyBatchController {
         batch.setBatchNumber(req.getBatchNumber());
         batch.setExpiryDate(java.time.LocalDate.parse(req.getExpiryDate()));
         batch.setQuantity(req.getStock());
+        batch.setPurchasePrice(req.getPurchasePrice());
+        batch.setSalePrice(req.getSalePrice());
+        batch.setCreatedAt(req.getCreatedAt() != null && !req.getCreatedAt().isEmpty() ? java.time.LocalDate.parse(req.getCreatedAt()) : java.time.LocalDate.now());
         // Set the medicine entity from the medicineId
         batch.setMedicine(medicineRepository.findById(req.getMedicineId()).orElseThrow(() -> new IllegalArgumentException("Invalid medicineId")));
         return batchService.updateBatch(id, batch);

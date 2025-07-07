@@ -14,6 +14,7 @@ public class Medicine {
     private String manufacturer;
     private String category;
     private String description;
+    private Double price;
 
     @OneToMany(mappedBy = "medicine")
     @JsonManagedReference
@@ -65,6 +66,14 @@ public class Medicine {
 
     public void setDescription(String description) {
         this.description = description == null ? "" : description;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 
     public List<MedicineBatch> getBatches() {

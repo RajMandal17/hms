@@ -55,7 +55,12 @@ export interface Appointment {
 }
 
 export interface Medicine {
+  id?: number;
   name: string;
+  manufacturer?: string;
+  category?: string;
+  description?: string;
+  price?: number;
   dosage?: string | null;
   frequency?: string | null;
   duration?: string | null;
