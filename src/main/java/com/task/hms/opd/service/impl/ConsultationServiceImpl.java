@@ -49,6 +49,7 @@ public class ConsultationServiceImpl implements ConsultationService {
         consultation.setPrescription(request.getPrescription());
         consultation.setSymptoms(request.getSymptoms());
         consultation.setFollowUpDate(request.getFollowUpDate());
+        consultation.setFee(request.getFee());
         try {
             if (request.getMedicines() != null) {
                 consultation.setMedicinesJson(objectMapper.writeValueAsString(request.getMedicines()));
@@ -70,6 +71,7 @@ public class ConsultationServiceImpl implements ConsultationService {
         dto.setNotes(consultation.getNotes());
         dto.setPrescription(consultation.getPrescription());
         dto.setConsultationTime(consultation.getConsultationTime());
+        dto.setFee(consultation.getFee());
         // Convert followUpDate from String to LocalDate
         if (consultation.getFollowUpDate() != null && !consultation.getFollowUpDate().isEmpty()) {
             dto.setFollowUpDate(java.time.LocalDate.parse(consultation.getFollowUpDate()));
@@ -136,6 +138,7 @@ public class ConsultationServiceImpl implements ConsultationService {
             consultation.setPrescription(request.getPrescription());
             consultation.setSymptoms(request.getSymptoms());
             consultation.setFollowUpDate(request.getFollowUpDate());
+            consultation.setFee(request.getFee());
             try {
                 if (request.getMedicines() != null) {
                     consultation.setMedicinesJson(objectMapper.writeValueAsString(request.getMedicines()));

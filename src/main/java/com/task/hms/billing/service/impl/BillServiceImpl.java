@@ -218,4 +218,40 @@ public class BillServiceImpl implements BillService {
         }
         return dtos;
     }
+
+    @Override
+    public Bill deleteBillItem(Long itemId) {
+        BillItem item = billItemRepository.findById(itemId).orElse(null);
+        if (item == null) return null;
+        Bill bill = item.getBill();
+        if (bill == null) return null;
+        // Remove the item from the bill's items list if present
+        if (bill.getItems() != null) {
+            bill.getItems().removeIf(i -> i.getId().equals(itemId));
+        }
+        // Delete the item from repository
+        billItemRepository.deleteById(itemId);
+        // Recalculate total amount
+        double total = bill.getItems() != null ? bill.getItems().stream().mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum() : 0.0;
+        bill.setTotalAmount(total);
+        return billRepository.save(bill);
+    }
+
+    @Override
+    public Bill updateBillItem(Long itemId, BillItem updatedItem) {
+        BillItem item = billItemRepository.findById(itemId).orElse(null);
+        if (item == null) return null;
+        Bill bill = item.getBill();
+        if (bill == null) return null;
+        // Update fields of the item
+        item.setDescription(updatedItem.getDescription());
+        item.setAmount(updatedItem.getAmount());
+        item.setSourceType(updatedItem.getSourceType());
+        item.setSourceId(updatedItem.getSourceId());
+        billItemRepository.save(item);
+        // Recalculate total amount
+        double total = bill.getItems() != null ? bill.getItems().stream().mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum() : 0.0;
+        bill.setTotalAmount(total);
+        return billRepository.save(bill);
+    }
 }

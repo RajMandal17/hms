@@ -31,6 +31,8 @@ public class Consultation {
 
     private String prescriptionStatus; // e.g., PENDING, FULFILLED
 
+    private Double fee;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getAppointmentId() { return appointmentId; }
@@ -53,4 +55,6 @@ public class Consultation {
     public void setMedicinesJson(String medicinesJson) { this.medicinesJson = medicinesJson; }
     public String getPrescriptionStatus() { return prescriptionStatus; }
     public void setPrescriptionStatus(String prescriptionStatus) { this.prescriptionStatus = prescriptionStatus; }
+    public Double getFee() { return fee; }
+    public void setFee(Double fee) { this.fee = fee; }
 }
