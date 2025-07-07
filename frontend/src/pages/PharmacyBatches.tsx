@@ -16,6 +16,9 @@ const PharmacyBatches: React.FC = () => {
     batchNumber: '',
     expiryDate: '',
     stock: '',
+    purchasePrice: '',
+    salePrice: '',
+    createdAt: '',
   });
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -26,6 +29,9 @@ const PharmacyBatches: React.FC = () => {
     batchNumber: '',
     expiryDate: '',
     stock: '',
+    purchasePrice: '',
+    salePrice: '',
+    createdAt: '',
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -47,7 +53,7 @@ const PharmacyBatches: React.FC = () => {
   }, []);
 
   const handleAddOpen = () => {
-    setAddForm({ medicineId: '', batchNumber: '', expiryDate: '', stock: '' });
+    setAddForm({ medicineId: '', batchNumber: '', expiryDate: '', stock: '', purchasePrice: '', salePrice: '', createdAt: '' });
     setAddError(null);
     setOpenAdd(true);
   };
@@ -67,6 +73,9 @@ const PharmacyBatches: React.FC = () => {
         batchNumber: addForm.batchNumber,
         expiryDate: addForm.expiryDate,
         stock: Number(addForm.stock),
+        purchasePrice: Number(addForm.purchasePrice),
+        salePrice: Number(addForm.salePrice),
+        createdAt: addForm.createdAt,
       });
       setBatches((prev) => [...prev, newBatch]);
       setOpenAdd(false);
@@ -83,6 +92,9 @@ const PharmacyBatches: React.FC = () => {
       batchNumber: batch.batchNumber,
       expiryDate: batch.expiryDate,
       stock: String(batch.stock),
+      purchasePrice: String(batch.purchasePrice),
+      salePrice: String(batch.salePrice),
+      createdAt: batch.createdAt ? batch.createdAt.split('T')[0] : '',
     });
     setEditError(null);
     setOpenEdit(true);
@@ -103,6 +115,9 @@ const PharmacyBatches: React.FC = () => {
         batchNumber: editForm.batchNumber,
         expiryDate: editForm.expiryDate,
         stock: Number(editForm.stock),
+        purchasePrice: Number(editForm.purchasePrice),
+        salePrice: Number(editForm.salePrice),
+        createdAt: editForm.createdAt,
       });
       setBatches((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
       setOpenEdit(false);
@@ -186,6 +201,9 @@ const PharmacyBatches: React.FC = () => {
           <TextField margin="dense" label="Batch Number" name="batchNumber" value={addForm.batchNumber} onChange={handleAddChange} fullWidth required />
           <TextField margin="dense" label="Expiry Date" name="expiryDate" value={addForm.expiryDate} onChange={handleAddChange} type="date" fullWidth required InputLabelProps={{ shrink: true }} />
           <TextField margin="dense" label="Stock" name="stock" value={addForm.stock} onChange={handleAddChange} type="number" fullWidth required />
+          <TextField margin="dense" label="Purchase Price" name="purchasePrice" value={addForm.purchasePrice} onChange={handleAddChange} type="number" fullWidth required />
+          <TextField margin="dense" label="Sale Price" name="salePrice" value={addForm.salePrice} onChange={handleAddChange} type="number" fullWidth required />
+          <TextField margin="dense" label="Created At" name="createdAt" value={addForm.createdAt} onChange={handleAddChange} type="date" fullWidth required InputLabelProps={{ shrink: true }} />
           {addError && <Typography color="error">{addError}</Typography>}
         </DialogContent>
         <DialogActions>
@@ -207,6 +225,9 @@ const PharmacyBatches: React.FC = () => {
           <TextField margin="dense" label="Batch Number" name="batchNumber" value={editForm.batchNumber} onChange={handleEditChange} fullWidth required />
           <TextField margin="dense" label="Expiry Date" name="expiryDate" value={editForm.expiryDate} onChange={handleEditChange} type="date" fullWidth required InputLabelProps={{ shrink: true }} />
           <TextField margin="dense" label="Stock" name="stock" value={editForm.stock} onChange={handleEditChange} type="number" fullWidth required />
+          <TextField margin="dense" label="Purchase Price" name="purchasePrice" value={editForm.purchasePrice} onChange={handleEditChange} type="number" fullWidth required />
+          <TextField margin="dense" label="Sale Price" name="salePrice" value={editForm.salePrice} onChange={handleEditChange} type="number" fullWidth required />
+          <TextField margin="dense" label="Created At" name="createdAt" value={editForm.createdAt} onChange={handleEditChange} type="date" fullWidth required InputLabelProps={{ shrink: true }} />
           {editError && <Typography color="error">{editError}</Typography>}
         </DialogContent>
         <DialogActions>

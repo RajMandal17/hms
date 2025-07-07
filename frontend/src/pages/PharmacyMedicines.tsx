@@ -15,6 +15,7 @@ const PharmacyMedicines: React.FC = () => {
     category: '',
     manufacturer: '',
     description: '',
+    price: '',
     stock: '',
     expiryDate: '',
   });
@@ -36,6 +37,7 @@ const PharmacyMedicines: React.FC = () => {
     category: '',
     manufacturer: '',
     description: '',
+    price: '',
     stock: '',
     expiryDate: '',
   });
@@ -49,6 +51,7 @@ const PharmacyMedicines: React.FC = () => {
       category: medicine.category || '',
       manufacturer: medicine.manufacturer || '',
       description: medicine.description || '',
+      price: medicine.price !== undefined && medicine.price !== null ? String(medicine.price) : '',
       stock: medicine.stock !== undefined && medicine.stock !== null ? String(medicine.stock) : '',
       expiryDate: medicine.expiryDate || '',
     });
@@ -74,6 +77,7 @@ const PharmacyMedicines: React.FC = () => {
         category: editForm.category,
         manufacturer: editForm.manufacturer,
         description: editForm.description,
+        price: Number(editForm.price),
         stock: Number(editForm.stock),
         expiryDate: editForm.expiryDate,
       });
@@ -119,7 +123,7 @@ const PharmacyMedicines: React.FC = () => {
   }, []);
 
   const handleAddOpen = () => {
-    setAddForm({ name: '', category: '', manufacturer: '', description: '', stock: '', expiryDate: '' });
+    setAddForm({ name: '', category: '', manufacturer: '', description: '', price: '', stock: '', expiryDate: '' });
     setAddError(null);
     setOpenAdd(true);
   };
@@ -142,6 +146,7 @@ const PharmacyMedicines: React.FC = () => {
         category: addForm.category,
         manufacturer: addForm.manufacturer,
         description: addForm.description,
+        price: Number(addForm.price),
         stock: Number(addForm.stock),
         expiryDate: addForm.expiryDate,
       });
@@ -182,36 +187,40 @@ const PharmacyMedicines: React.FC = () => {
                 <TableCell>Name</TableCell>
                 <TableCell>Category</TableCell>
                 <TableCell>Manufacturer</TableCell>
-                <TableCell>Stock</TableCell>
-                <TableCell>Expiry Date</TableCell>
-                {/* Add more columns as needed */}
+                <TableCell>Description</TableCell>
+                <TableCell>Price</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {medicines.map((med) => (
-                <TableRow key={med.id}>
-                  <TableCell>{med.name}</TableCell>
-                  <TableCell>{med.category}</TableCell>
-                  <TableCell>{med.manufacturer}</TableCell>
-                  <TableCell>{getTotalStock(med.batches)}</TableCell>
-                  <TableCell>{getEarliestExpiry(med.batches)}</TableCell>
+              {medicines.map((medicine) => (
+                <TableRow key={medicine.id}>
+                  <TableCell>{medicine.name}</TableCell>
+                  <TableCell>{medicine.category}</TableCell>
+                  <TableCell>{medicine.manufacturer}</TableCell>
+                  <TableCell>{medicine.description}</TableCell>
+                  <TableCell>{medicine.price ?? '-'}</TableCell>
                   <TableCell>
-                    <IconButton onClick={() => handleEditOpen(med)} size="small"><EditIcon /></IconButton>
-                    <IconButton onClick={() => handleDelete(med.id)} size="small" disabled={deleteLoading && deleteId === med.id}><DeleteIcon /></IconButton>
+                    <IconButton onClick={() => handleEditOpen(medicine)}><EditIcon /></IconButton>
+                    <IconButton onClick={() => setDeleteId(medicine.id!)}><DeleteIcon /></IconButton>
                   </TableCell>
                 </TableRow>
               ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
       {/* Edit Medicine Dialog */}
       <Dialog open={openEdit} onClose={handleEditClose}>
         <DialogTitle>Edit Medicine</DialogTitle>
         <DialogContent>
-          <TextField margin="dense" label="Name" name="name" value={editForm.name} onChange={handleEditChange} fullWidth required />
-          <TextField margin="dense" label="Category" name="category" value={editForm.category} onChange={handleEditChange} fullWidth required />
-          <TextField margin="dense" label="Manufacturer" name="manufacturer" value={editForm.manufacturer} onChange={handleEditChange} fullWidth required />
-          <TextField margin="dense" label="Description" name="description" value={editForm.description} onChange={handleEditChange} fullWidth />
-          <TextField margin="dense" label="Stock" name="stock" value={editForm.stock} onChange={handleEditChange} type="number" fullWidth required />
-          <TextField margin="dense" label="Expiry Date" name="expiryDate" value={editForm.expiryDate} onChange={handleEditChange} type="date" fullWidth required InputLabelProps={{ shrink: true }} />
+          <TextField label="Name" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} fullWidth margin="dense" />
+          <TextField label="Category" value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })} fullWidth margin="dense" />
+          <TextField label="Manufacturer" value={editForm.manufacturer} onChange={e => setEditForm({ ...editForm, manufacturer: e.target.value })} fullWidth margin="dense" />
+          <TextField label="Description" value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} fullWidth margin="dense" />
+          <TextField label="Price" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: e.target.value })} type="number" fullWidth margin="dense" />
+          <TextField label="Stock" value={editForm.stock} onChange={e => setEditForm({ ...editForm, stock: e.target.value })} type="number" fullWidth margin="dense" />
+          <TextField label="Expiry Date" value={editForm.expiryDate} onChange={e => setEditForm({ ...editForm, expiryDate: e.target.value })} type="date" fullWidth margin="dense" InputLabelProps={{ shrink: true }} />
           {editError && <Typography color="error">{editError}</Typography>}
         </DialogContent>
         <DialogActions>
@@ -223,19 +232,16 @@ const PharmacyMedicines: React.FC = () => {
       </Dialog>
       {/* Delete error message */}
       {deleteError && <Typography color="error" sx={{ mt: 1 }}>{deleteError}</Typography>}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
       <Dialog open={openAdd} onClose={handleAddClose}>
         <DialogTitle>Add Medicine</DialogTitle>
         <DialogContent>
-          <TextField margin="dense" label="Name" name="name" value={addForm.name} onChange={handleAddChange} fullWidth required />
-          <TextField margin="dense" label="Category" name="category" value={addForm.category} onChange={handleAddChange} fullWidth required />
-          <TextField margin="dense" label="Manufacturer" name="manufacturer" value={addForm.manufacturer} onChange={handleAddChange} fullWidth required />
-          <TextField margin="dense" label="Description" name="description" value={addForm.description} onChange={handleAddChange} fullWidth />
-          <TextField margin="dense" label="Stock" name="stock" value={addForm.stock} onChange={handleAddChange} type="number" fullWidth required />
-          <TextField margin="dense" label="Expiry Date" name="expiryDate" value={addForm.expiryDate} onChange={handleAddChange} type="date" fullWidth required InputLabelProps={{ shrink: true }} />
+          <TextField label="Name" value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })} fullWidth margin="dense" />
+          <TextField label="Category" value={addForm.category} onChange={e => setAddForm({ ...addForm, category: e.target.value })} fullWidth margin="dense" />
+          <TextField label="Manufacturer" value={addForm.manufacturer} onChange={e => setAddForm({ ...addForm, manufacturer: e.target.value })} fullWidth margin="dense" />
+          <TextField label="Description" value={addForm.description} onChange={e => setAddForm({ ...addForm, description: e.target.value })} fullWidth margin="dense" />
+          <TextField label="Price" value={addForm.price} onChange={e => setAddForm({ ...addForm, price: e.target.value })} type="number" fullWidth margin="dense" />
+          <TextField label="Stock" value={addForm.stock} onChange={e => setAddForm({ ...addForm, stock: e.target.value })} type="number" fullWidth margin="dense" />
+          <TextField label="Expiry Date" value={addForm.expiryDate} onChange={e => setAddForm({ ...addForm, expiryDate: e.target.value })} type="date" fullWidth margin="dense" InputLabelProps={{ shrink: true }} />
           {addError && <Typography color="error">{addError}</Typography>}
         </DialogContent>
         <DialogActions>

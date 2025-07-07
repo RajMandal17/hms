@@ -222,13 +222,15 @@ const Billing: React.FC = () => {
             </div>
             <div className="mt-2 font-semibold">Total: {walkInDetails.expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0)}</div>
           </div>
+          
         ) : selectedPatient && (
           <div className="mb-2">
             <div className="mb-1">Name: {selectedPatient.name || ''}</div>
             <div className="mb-1">Gender: {selectedPatient.gender || 'N/A'}</div>
-            <div className="mb-1">DOB: {selectedPatient.dateOfBirth || 'N/A'}</div>
-            <div className="mb-1">Phone: {selectedPatient.phone || 'N/A'}</div>
+            
+            <div className="mb-1">Phone: {selectedPatient.contact || 'N/A'}</div>
             <div className="mb-1">Email: {selectedPatient.email || 'N/A'}</div>
+              
             <h4 className="font-medium mt-2">Expenses</h4>
             <table className="min-w-full border mb-2">
               <thead>
@@ -245,10 +247,14 @@ const Billing: React.FC = () => {
                     <td className="border px-2">{exp.description}</td>
                     <td className="border px-2">{exp.amount}</td>
                   </tr>
+                  
                 ))}
+                
               </tbody>
             </table>
             <div className="font-semibold">Total: {totalExpenses}</div>
+            {/* Dynamic billing breakdown preview */}
+            <DynamicBillingBreakdown patientId={selectedPatient.id} />
           </div>
         )}
         <button
@@ -488,6 +494,72 @@ const Billing: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Add this component at the bottom of the file
+const DynamicBillingBreakdown: React.FC<{ patientId: number }> = ({ patientId }) => {
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [medicines, setMedicines] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const cons = await consultationService.getConsultationsByPatientId(patientId);
+        setConsultations(cons);
+        // Flatten all medicines from all consultations
+        let meds: any[] = [];
+        cons.forEach(c => {
+          if (Array.isArray(c.medicines)) {
+            c.medicines.forEach((m: any) => {
+              if (m.name && m.quantity) {
+                meds.push({ ...m, consultationId: c.id });
+              }
+            });
+          }
+        });
+        setMedicines(meds);
+      } catch {
+        setConsultations([]);
+        setMedicines([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [patientId]);
+
+  if (loading) return <div>Loading billing breakdown...</div>;
+  if (!consultations.length) return <div>No consultations found for this patient.</div>;
+
+  // Group medicines by name for summary
+  const medSummary: Record<string, { quantity: number, price: number }> = {};
+  medicines.forEach(m => {
+    if (!medSummary[m.name]) medSummary[m.name] = { quantity: 0, price: m.price || 0 };
+    medSummary[m.name].quantity += Number(m.quantity) || 0;
+    medSummary[m.name].price = m.price || 0;
+  });
+
+  // Example: fixed consultation fee
+  const consultationFee = 500;
+  const totalConsultation = consultations.length * consultationFee;
+  const totalMedicines = Object.values(medSummary).reduce((sum, m) => sum + m.quantity * m.price, 0);
+  const total = totalConsultation + totalMedicines;
+
+  return (
+    <div className="mt-2 p-2 border rounded bg-gray-50">
+      <h5 className="font-semibold mb-1"> Billing Breakdown</h5>
+      <div>Consultation Fee: {consultations.length} x ₹{consultationFee} = <b>₹{totalConsultation}</b></div>
+      <div className="mt-1">Medicine Charges:</div>
+      <ul className="ml-4">
+        {Object.entries(medSummary).map(([name, m]) => (
+          <li key={name}>{name} x {m.quantity} @ ₹{m.price} = ₹{m.quantity * m.price}</li>
+        ))}
+      </ul>
+      <div className="mt-2 font-bold">Total: ₹{total}</div>
     </div>
   );
 };
