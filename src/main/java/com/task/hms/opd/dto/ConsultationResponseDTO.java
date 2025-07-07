@@ -17,6 +17,7 @@ public class ConsultationResponseDTO {
     private String prescription;
     private LocalDateTime consultationTime;
     private LocalDate followUpDate;
+    private Double fee;
 
     // Getters and setters
     public Long getId() { return id; }
@@ -43,4 +44,6 @@ public class ConsultationResponseDTO {
     public void setConsultationTime(LocalDateTime consultationTime) { this.consultationTime = consultationTime; }
     public LocalDate getFollowUpDate() { return followUpDate; }
     public void setFollowUpDate(LocalDate followUpDate) { this.followUpDate = followUpDate; }
+    public Double getFee() { return fee; }
+    public void setFee(Double fee) { this.fee = fee; }
 }

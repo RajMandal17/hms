@@ -41,13 +41,21 @@ import { appointmentService } from '../services/appointmentService';
 import { useAuth } from '../contexts/AuthContext';
 import { getMedicines } from '../services/pharmacyService';
 
+// --- Types for Consultation Form Medicines ---
+interface ConsultationFormMedicine {
+  name: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  quantity?: string | number;
+}
+
 export const Consultations: React.FC = () => {
   const { hasAnyRole } = useAuth();
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [medicineOptions, setMedicineOptions] = useState<string[]>([]);
   const [medicineList, setMedicineList] = useState<Medicine[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,9 +77,10 @@ export const Consultations: React.FC = () => {
     prescription: '',
     notes: '',
     followUpDate: '',
+    fee: '',
     medicines: [
-      { name: '', dose: '', frequency: '', duration: '' }
-    ],
+      { name: '', dose: '', frequency: '', duration: '', quantity: '' }
+    ] as ConsultationFormMedicine[],
   });
 
   const canEdit = hasAnyRole(['ADMIN', 'DOCTOR']);
@@ -102,14 +111,11 @@ export const Consultations: React.FC = () => {
 
   const loadConsultations = async () => {
     try {
-      setLoading(true);
       const response = await consultationService.getConsultationsPaged(page, rowsPerPage, searchTerm);
       setConsultations(response.content);
       setTotalCount(response.totalElements);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load consultations');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -119,11 +125,18 @@ export const Consultations: React.FC = () => {
       setFormData({
         appointmentId: consultation.appointmentId,
         symptoms: consultation.symptoms || '',
-        diagnosis: consultation.diagnosis,
-        prescription: consultation.prescription,
+        diagnosis: consultation.diagnosis || '',
+        prescription: consultation.prescription || '',
         notes: consultation.notes || '',
         followUpDate: consultation.followUpDate || '',
-        medicines: consultation.medicines || [{ name: '', dose: '', frequency: '', duration: '' }],
+        fee: consultation.fee !== undefined && consultation.fee !== null ? String(consultation.fee) : '',
+        medicines: (consultation.medicines || [{ name: '', dose: '', frequency: '', duration: '', quantity: '' }]).map(med => ({
+          name: med.name || '',
+          dose: (med as any).dose || '',
+          frequency: (med as any).frequency || '',
+          duration: (med as any).duration || '',
+          quantity: (med as any).quantity || '',
+        })),
       });
     } else {
       setSelectedConsultation(null);
@@ -134,8 +147,9 @@ export const Consultations: React.FC = () => {
         prescription: '',
         notes: '',
         followUpDate: '',
+        fee: '',
         medicines: [
-          { name: '', dose: '', frequency: '', duration: '' }
+          { name: '', dose: '', frequency: '', duration: '', quantity: '' }
         ],
       });
     }
@@ -151,14 +165,14 @@ export const Consultations: React.FC = () => {
     setIsViewing(false);
   };
 
-  const handleMedicineChange = (idx: number, field: string, value: string) => {
+  const handleMedicineChange = (idx: number, field: keyof ConsultationFormMedicine, value: string) => {
     const updated = [...formData.medicines];
-    updated[idx][field] = value;
+    (updated[idx] as any)[field] = value;
     setFormData({ ...formData, medicines: updated });
   };
 
   const handleAddMedicine = () => {
-    setFormData({ ...formData, medicines: [...formData.medicines, { name: '', dose: '', frequency: '', duration: '' }] });
+    setFormData({ ...formData, medicines: [...formData.medicines, { name: '', dose: '', frequency: '', duration: '', quantity: '' }] });
   };
 
   const handleRemoveMedicine = (idx: number) => {
@@ -170,7 +184,14 @@ export const Consultations: React.FC = () => {
     try {
       const payload = {
         ...formData,
-        medicines: formData.medicines.filter(med => med.name.trim() !== ''),
+        fee: formData.fee === '' ? 0 : Number(formData.fee),
+        medicines: formData.medicines.filter(med => med.name.trim() !== '').map(med => ({
+          name: med.name,
+          dosage: med.dose,
+          frequency: med.frequency,
+          duration: med.duration,
+          quantity: med.quantity ? Number(med.quantity) : undefined,
+        })),
       };
       if (selectedConsultation) {
         await consultationService.updateConsultation(selectedConsultation.id, payload);
@@ -198,7 +219,7 @@ export const Consultations: React.FC = () => {
     }
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -250,6 +271,7 @@ export const Consultations: React.FC = () => {
                 <TableCell>Diagnosis</TableCell>
                 <TableCell>Medicines</TableCell>
                 <TableCell>Follow-up</TableCell>
+                <TableCell>Fee</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -263,12 +285,14 @@ export const Consultations: React.FC = () => {
                   <TableCell>{c.diagnosis}</TableCell>
                   <TableCell>{(c.medicines && c.medicines.length > 0) ? c.medicines.map((m) => `${m.name}${m.dosage ? ` (${m.dosage})` : ''}${m.frequency ? `, Freq: ${m.frequency}` : ''}${m.duration ? `, Dur: ${m.duration}` : ''}`).join('; ') : '-'}</TableCell>
                   <TableCell>{c.followUpDate ? c.followUpDate : '-'}</TableCell>
+                  <TableCell>{c.fee ?? '-'}</TableCell>
                   <TableCell>
                     <IconButton size="small" onClick={() => handleOpenDialog(c, 'view')}><Visibility /></IconButton>
                     {canEdit && <IconButton size="small" onClick={() => handleOpenDialog(c, 'edit')}><Edit /></IconButton>}
                     {canDelete && <IconButton size="small" onClick={() => handleDelete(c)} color="error"><Delete /></IconButton>}
                     <IconButton size="small" color="primary" title="Download PDF" onClick={async () => {
                       try {
+                        if (!c.patientId) throw new Error('No patientId');
                         const blob = await consultationService.downloadPatientHistoryPdf(c.patientId);
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
@@ -312,10 +336,8 @@ export const Consultations: React.FC = () => {
                   options={appointments}
                   getOptionLabel={(option) => {
                     if (!option) return '';
-                    const patientName = option.patient && (option.patient.firstName || option.patient.name)
-                      ? option.patient.firstName
-                        ? `${option.patient.firstName} ${option.patient.lastName || ''}`.trim()
-                        : option.patient.name
+                    const patientName = option.patient && option.patient.name
+                      ? option.patient.name
                       : `Unknown Patient (ID: ${option.patientId || option.id})`;
                     const doctorName = option.doctor && (option.doctor.firstName || option.doctor.username)
                       ? option.doctor.firstName
@@ -329,7 +351,7 @@ export const Consultations: React.FC = () => {
                   }}
                   isOptionEqualToValue={(option, value) => option && value && option.id === value.id}
                   value={appointments.find(a => a.id === formData.appointmentId) || null}
-                  onChange={(event, newValue) => {
+                  onChange={(_, newValue) => {
                     setFormData({ ...formData, appointmentId: newValue?.id || 0 });
                   }}
                   disabled={isViewing}
@@ -382,7 +404,7 @@ export const Consultations: React.FC = () => {
                           freeSolo
                           options={medicineOptions}
                           value={med.name}
-                          onInputChange={(e, newValue) => handleMedicineChange(idx, 'name', newValue)}
+                          onInputChange={(_, newValue) => handleMedicineChange(idx, 'name', newValue)}
                           renderInput={(params) => (
                             <TextField {...params} label="Name" disabled={isViewing} fullWidth />
                           )}
@@ -472,6 +494,16 @@ export const Consultations: React.FC = () => {
                   }
                   disabled={isViewing}
                   slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <TextField
+                  label="Consultation Fee"
+                  type="number"
+                  value={formData.fee}
+                  onChange={e => setFormData({ ...formData, fee: e.target.value })}
+                  disabled={isViewing}
+                  fullWidth
                 />
               </Grid>
             </Grid>

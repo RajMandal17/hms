@@ -10,6 +10,7 @@ public class ConsultationRequest {
     private String prescription;
     private String symptoms;
     private String followUpDate;
+    private Double fee;
     private List<MedicineDTO> medicines;
 
     public Long getAppointmentId() { return appointmentId; }
@@ -26,6 +27,8 @@ public class ConsultationRequest {
     public void setSymptoms(String symptoms) { this.symptoms = symptoms; }
     public String getFollowUpDate() { return followUpDate; }
     public void setFollowUpDate(String followUpDate) { this.followUpDate = followUpDate; }
+    public Double getFee() { return fee; }
+    public void setFee(Double fee) { this.fee = fee; }
     public List<MedicineDTO> getMedicines() { return medicines; }
     public void setMedicines(List<MedicineDTO> medicines) { this.medicines = medicines; }
 

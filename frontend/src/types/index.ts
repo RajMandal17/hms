@@ -79,6 +79,7 @@ export interface Consultation {
   prescription?: string;
   consultationTime?: string;
   followUpDate?: string | null;
+  fee?: number;
   appointment?: Appointment;
   createdAt?: string;
   updatedAt?: string;
