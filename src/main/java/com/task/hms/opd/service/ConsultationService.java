@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface ConsultationService {
     Consultation addConsultation(ConsultationRequest request);
@@ -19,4 +20,7 @@ public interface ConsultationService {
     ConsultationResponseDTO mapToResponseDTO(Consultation consultation);
     com.task.hms.opd.model.Patient getPatientById(String patientId);
     double calculateBillForPatient(String patientId);
+
+    // Implementation for saveConsultationWithBilling should be in the service implementation class, not the interface.
+    // (Removed default method as required.)
 }

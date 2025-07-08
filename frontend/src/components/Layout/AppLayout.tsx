@@ -174,12 +174,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
             <Activity size={24} color="white" />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={700} color="primary">
+            <Typography variant="h6" fontWeight={700} color="primary" component="div">
               MediCare
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Hospital Management
-            </Typography>
+            <Box component="span">
+              <Typography variant="caption" color="text.secondary" component="span">
+                Hospital Management
+              </Typography>
+            </Box>
           </Box>
         </Box>
       </Toolbar>
@@ -277,6 +279,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
               </ListItemButton>
               <ListItemButton
                 sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/ipd/consultations')}
+                selected={location.pathname === '/ipd/consultations'}
+              >
+                <ListItemIcon><Assignment /></ListItemIcon>
+                <ListItemText primary="IPD Consultations" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
+                onClick={() => navigate('/ipd/vitals')}
+                selected={location.pathname === '/ipd/vitals'}
+              >
+                <ListItemIcon><LocalHospital /></ListItemIcon>
+                <ListItemText primary="IPD Vitals" />
+              </ListItemButton>
+              <ListItemButton
+                sx={{ borderRadius: 2, mb: 0.5 }}
                 onClick={() => navigate('/ipd/billing')}
                 selected={location.pathname === '/ipd/billing'}
               >
@@ -328,6 +346,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
               >
                 <ListItemText primary="Add Medicine" />
               </ListItemButton>
+              {/* Add more pharmacy submenu items here if needed */}
             </List>
           </Collapse>
 
@@ -416,10 +435,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
               {user?.username?.[0]?.toUpperCase() || 'U'}
             </Avatar>
             <Box flex={1}>
-              <Typography variant="body2" fontWeight={500}>
+              <Typography variant="body2" fontWeight={500} component="div">
                 {user?.username}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" component="span">
                 {user?.role}
               </Typography>
             </Box>
@@ -512,7 +531,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
             
             {/* User Menu */}
             <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+              <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }} component="span">
                 {user?.username}
               </Typography>
               <IconButton onClick={handleMenuClick} color="inherit">

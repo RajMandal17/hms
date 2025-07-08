@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getConsolidatedIPDBill, finalizeConsolidatedIPDBill, Bill } from '../services/billingService';
+import { ipdService } from '../services/ipdService';
+import { Autocomplete } from '@mui/material';
 import { TextField, Button, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, CircularProgress } from '@mui/material';
 
 const IPDBilling: React.FC = () => {
   const [admissionId, setAdmissionId] = useState('');
+  const [admissions, setAdmissions] = useState<any[]>([]);
+  useEffect(() => {
+    ipdService.getAdmissions().then(setAdmissions);
+  }, []);
   const [bill, setBill] = useState<Bill | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +47,16 @@ const IPDBilling: React.FC = () => {
   return (
     <Paper sx={{ p: 3, maxWidth: 700, margin: 'auto', mt: 4 }}>
       <Typography variant="h5" gutterBottom>IPD Consolidated Billing</Typography>
-      <TextField label="Admission ID" value={admissionId} onChange={e => setAdmissionId(e.target.value)} type="number" sx={{ mr: 2 }} />
+      <Autocomplete
+        options={admissions}
+        getOptionLabel={adm => adm && adm.id ? `#${adm.id} - ${adm.patient?.name || 'Unknown'} (${adm.admissionDate?.slice(0,10)})` : ''}
+        value={admissions.find(a => a.id === Number(admissionId)) || null}
+        onChange={(_, newValue) => setAdmissionId(newValue ? String(newValue.id) : '')}
+        renderInput={params => (
+          <TextField {...params} label="Admission" sx={{ mr: 2 }} />
+        )}
+        sx={{ width: 300, mr: 2 }}
+      />
       <Button variant="contained" onClick={handlePreview} disabled={loading || !admissionId}>Preview Bill</Button>
       {loading && <CircularProgress sx={{ ml: 2 }} size={24} />}
       {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
@@ -77,5 +92,4 @@ const IPDBilling: React.FC = () => {
     </Paper>
   );
 };
-
 export default IPDBilling;

@@ -10,15 +10,12 @@ import com.task.hms.opd.repository.ConsultationRepository;
 import com.task.hms.opd.repository.AppointmentRepository;
 import com.task.hms.opd.repository.PatientRepository;
 import com.task.hms.opd.service.ConsultationService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,32 +28,74 @@ public class ConsultationServiceImpl implements ConsultationService {
     private AppointmentRepository appointmentRepository;
     @Autowired
     private PatientRepository patientRepository;
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Override
     @Transactional
     public Consultation addConsultation(ConsultationRequest request) {
+        // Debug: Log incoming medicines for troubleshooting null values
+        try {
+            System.out.println("Received medicines: " + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request.getMedicines()));
+        } catch (Exception e) {
+            System.out.println("Could not log medicines: " + e.getMessage());
+        }
         Consultation consultation = new Consultation();
         consultation.setAppointmentId(request.getAppointmentId());
         // Fetch the appointment and set doctorName from it
         Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
             .orElseThrow(() -> new RuntimeException("Appointment not found"));
         consultation.setDoctorName(appointment.getDoctorName());
-        consultation.setConsultationTime(LocalDateTime.now());
+        consultation.setConsultationTime(java.time.LocalDateTime.now());
         consultation.setNotes(request.getNotes());
         consultation.setDiagnosis(request.getDiagnosis());
         consultation.setPrescription(request.getPrescription());
         consultation.setSymptoms(request.getSymptoms());
         consultation.setFollowUpDate(request.getFollowUpDate());
         consultation.setFee(request.getFee());
-        try {
-            if (request.getMedicines() != null) {
-                consultation.setMedicinesJson(objectMapper.writeValueAsString(request.getMedicines()));
+      //  consultation.setMedicines(request.getMedicines());
+
+        // Handle medicines as BillItems (using ConsultationRequest.MedicineDTO)
+        java.util.List<com.task.hms.billing.model.BillItem> medicines = new java.util.ArrayList<>();
+        double total = 0.0;
+        if (request.getMedicines() != null) {
+            for (ConsultationRequest.MedicineDTO medDto : request.getMedicines()) {
+                medDto.setTotal(medDto.getTotal()*medDto.getQuantity());
+                com.task.hms.billing.model.BillItem med = new com.task.hms.billing.model.BillItem();
+                med.setDescription(medDto.getName() + (medDto.getQuantity() != null ? " x" + medDto.getQuantity() : ""));
+                // Defensive conversion for amount
+                Double amount = 0.0;
+                try {
+                    Double totalField = medDto.getTotal();
+                    Integer quantityField = medDto.getQuantity();
+                    if (totalField != null && quantityField != null && quantityField > 0) {
+                        amount = totalField;
+                    } else if (totalField != null) {
+                        amount = totalField;
+                    }
+                } catch (Exception e) {
+                    amount = 0.0;
+                }
+                med.setAmount(amount);
+                med.setSourceType("MEDICINE");
+                medicines.add(med);
+                total += amount;
             }
-        } catch (Exception e) {
-            consultation.setMedicinesJson(null);
         }
+        consultation.setMedicines(medicines);
+
+        // Create and link Bill
+        com.task.hms.billing.model.Bill bill = new com.task.hms.billing.model.Bill();
+        bill.setPatientId(appointment.getPatientId()); // Use actual patient ID from appointment
+        bill.setBillType("OPD");
+        bill.setStatus("PENDING");
+        bill.setItems(medicines);
+        bill.setTotalAmount(total);
+        bill.setPaidAmount(0.0); // Set paidAmount to 0 for new bills
+        bill.setWalkInPatientId(null); // Or set as needed
+        consultation.setBill(bill);
+        for (com.task.hms.billing.model.BillItem med : medicines) {
+            med.setBill(bill);
+        }
+
         return consultationRepository.save(consultation);
     }
 
@@ -85,16 +124,29 @@ public class ConsultationServiceImpl implements ConsultationService {
             Patient patient = patientRepository.findById(appointment.getPatientId()).orElse(null);
             if (patient != null) dto.setPatientName(patient.getName());
         }
-        // Deserialize medicines
-        try {
-            if (consultation.getMedicinesJson() != null) {
-                List<MedicineDTO> medicines = objectMapper.readValue(
-                    consultation.getMedicinesJson(),
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, MedicineDTO.class)
-                );
-                dto.setMedicines(medicines);
-            }
-        } catch (Exception e) {
+        // Map medicines from BillItems to MedicineDTOs
+        if (consultation.getMedicines() != null && !consultation.getMedicines().isEmpty()) {
+            List<MedicineDTO> medicines = consultation.getMedicines().stream().map(billItem -> {
+                MedicineDTO medDto = new MedicineDTO();
+                // Try to parse name and quantity from description ("name xQTY")
+                String desc = billItem.getDescription();
+                if (desc != null && desc.contains(" x")) {
+                    int idx = desc.lastIndexOf(" x");
+                    medDto.setName(desc.substring(0, idx));
+                    try {
+                        medDto.setQuantity(Integer.parseInt(desc.substring(idx + 2)));
+                    } catch (Exception e) {
+                        medDto.setQuantity(null);
+                    }
+                } else {
+                    medDto.setName(desc);
+                    medDto.setQuantity(null);
+                }
+                medDto.setTotal(billItem.getAmount());
+                return medDto;
+            }).collect(java.util.stream.Collectors.toList());
+            dto.setMedicines(medicines);
+        } else {
             dto.setMedicines(null);
         }
         return dto;
@@ -129,7 +181,6 @@ public class ConsultationServiceImpl implements ConsultationService {
     public Optional<Consultation> updateConsultation(Long id, ConsultationRequest request) {
         return consultationRepository.findById(id).map(consultation -> {
             consultation.setAppointmentId(request.getAppointmentId());
-            // Set doctorName from appointment
             Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
             consultation.setDoctorName(appointment.getDoctorName());
@@ -139,13 +190,41 @@ public class ConsultationServiceImpl implements ConsultationService {
             consultation.setSymptoms(request.getSymptoms());
             consultation.setFollowUpDate(request.getFollowUpDate());
             consultation.setFee(request.getFee());
-            try {
-                if (request.getMedicines() != null) {
-                    consultation.setMedicinesJson(objectMapper.writeValueAsString(request.getMedicines()));
+
+            // Update medicines as BillItems (using ConsultationRequest.MedicineDTO)
+            java.util.List<com.task.hms.billing.model.BillItem> medicines = new java.util.ArrayList<>();
+            double total = 0.0;
+            if (request.getMedicines() != null) {
+                for (ConsultationRequest.MedicineDTO medDto : request.getMedicines()) {
+                    com.task.hms.billing.model.BillItem med = new com.task.hms.billing.model.BillItem();
+                    med.setDescription(medDto.getName() + (medDto.getQuantity() != null ? " x" + medDto.getQuantity() : ""));
+                    // Use total as the total price for the bill item (not price per unit)
+                    Double amount = medDto.getTotal() != null ? medDto.getTotal() : 0.0;
+                    med.setAmount(amount);
+                    med.setSourceType("MEDICINE");
+                    medicines.add(med);
+                    total += med.getAmount();
                 }
-            } catch (Exception e) {
-                consultation.setMedicinesJson(null);
             }
+            consultation.setMedicines(medicines);
+
+            // Update and link Bill
+            com.task.hms.billing.model.Bill bill = consultation.getBill();
+            if (bill == null) {
+                bill = new com.task.hms.billing.model.Bill();
+            }
+            bill.setPatientId(appointment.getPatientId()); // Use actual patient ID from appointment
+            bill.setBillType("OPD");
+            bill.setStatus("PENDING");
+            bill.setItems(medicines);
+            bill.setTotalAmount(total);
+            bill.setPaidAmount(0.0); // Set paidAmount to 0 for new/updated bills
+            bill.setWalkInPatientId(null); // Or set as needed
+            consultation.setBill(bill);
+            for (com.task.hms.billing.model.BillItem med : medicines) {
+                med.setBill(bill);
+            }
+
             return consultationRepository.save(consultation);
         });
     }
