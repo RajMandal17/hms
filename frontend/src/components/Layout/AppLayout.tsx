@@ -277,22 +277,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
                 <ListItemIcon><Assignment /></ListItemIcon>
                 <ListItemText primary="IPD Beds" />
               </ListItemButton>
-              <ListItemButton
-                sx={{ borderRadius: 2, mb: 0.5 }}
-                onClick={() => navigate('/ipd/consultations')}
-                selected={location.pathname === '/ipd/consultations'}
-              >
-                <ListItemIcon><Assignment /></ListItemIcon>
-                <ListItemText primary="IPD Consultations" />
-              </ListItemButton>
-              <ListItemButton
-                sx={{ borderRadius: 2, mb: 0.5 }}
-                onClick={() => navigate('/ipd/vitals')}
-                selected={location.pathname === '/ipd/vitals'}
-              >
-                <ListItemIcon><LocalHospital /></ListItemIcon>
-                <ListItemText primary="IPD Vitals" />
-              </ListItemButton>
+           
               <ListItemButton
                 sx={{ borderRadius: 2, mb: 0.5 }}
                 onClick={() => navigate('/ipd/billing')}

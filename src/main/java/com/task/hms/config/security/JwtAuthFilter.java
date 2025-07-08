@@ -55,6 +55,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         
         AntPathMatcher pathMatcher = new AntPathMatcher();
+        if (pathMatcher.match("/api/billing/**", path)) {
+            return true;
+        }
         String[] excludedPaths = {
             "/api/auth/**",
             "/api/users/register",

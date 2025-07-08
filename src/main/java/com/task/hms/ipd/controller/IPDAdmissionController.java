@@ -36,4 +36,11 @@ public class IPDAdmissionController {
         admissionService.dischargePatient(id);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<IPDAdmissionResponseDTO> updateAdmission(@PathVariable Long id, @RequestBody IPDAdmissionUpdateRequestDTO request) {
+        request.setId(id);
+        IPDAdmissionResponseDTO updated = admissionService.updateAdmission(request);
+        return ResponseEntity.ok(updated);
+    }
 }

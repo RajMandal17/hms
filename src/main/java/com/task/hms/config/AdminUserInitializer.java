@@ -40,6 +40,20 @@ public class AdminUserInitializer {
     }
 
     @Bean
+    public CommandLineRunner createRolesIfNotExists() {
+        return args -> {
+            for (RoleType roleType : RoleType.values()) {
+                if (!roleRepository.findByName(roleType).isPresent()) {
+                    Role role = new Role();
+                    role.setName(roleType);
+                    roleRepository.save(role);
+                    System.out.println("Inserted role: " + roleType);
+                }
+            }
+        };
+    }
+
+    @Bean
     public CommandLineRunner insertDefaultMedicines(
             @Autowired com.task.hms.pharmacy.repository.MedicineRepository medicineRepository,
             @Autowired com.task.hms.pharmacy.repository.MedicineBatchRepository medicineBatchRepository) {
@@ -71,6 +85,28 @@ public class AdminUserInitializer {
                     medicineBatchRepository.save(batch);
                 }
                 System.out.println("Inserted 50 default medicines and batches with price");
+            }
+        };
+    }
+
+    @Bean
+    public CommandLineRunner insertDefaultFeesAndCharges(
+            @Autowired com.task.hms.billing.repository.FeeAndChargeRepository feeAndChargeRepository) {
+        return args -> {
+            String[][] defaults = {
+                {"ROOM", "Room Charges (per day)", "1000.0"},
+                {"PRESCRIPTION", "IPD Prescription Fee", "200.0"},
+                {"CONSULTATION", "Consultation Fee", "500.0"}
+            };
+            for (String[] def : defaults) {
+                if (!feeAndChargeRepository.findByType(def[0]).isPresent()) {
+                    com.task.hms.billing.model.FeeAndCharge fee = new com.task.hms.billing.model.FeeAndCharge();
+                    fee.setType(def[0]);
+                    fee.setDescription(def[1]);
+                    fee.setAmount(Double.valueOf(def[2]));
+                    feeAndChargeRepository.save(fee);
+                    System.out.println("Inserted fee/charge: " + def[0]);
+                }
             }
         };
     }

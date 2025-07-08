@@ -8,5 +8,6 @@ public interface IPDAdmissionService {
     List<IPDAdmissionResponseDTO> getAllAdmissions();
     IPDAdmissionResponseDTO getAdmission(Long id);
     void dischargePatient(Long id);
+    IPDAdmissionResponseDTO updateAdmission(IPDAdmissionUpdateRequestDTO request);
     // Add more as needed
 }

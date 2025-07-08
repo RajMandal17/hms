@@ -1,25 +1,20 @@
 package com.task.hms.billing.service;
 
 import com.task.hms.billing.model.Bill;
+import com.task.hms.billing.model.BillItem;
 import com.task.hms.billing.model.Payment;
-import com.task.hms.billing.model.InsuranceClaim;
-import com.task.hms.billing.model.BillingSummary;
-import com.task.hms.billing.dto.BillDTO;
-import java.util.ArrayList;
 import java.util.List;
 
 public interface BillService {
-    Bill createBill(Bill bill);
-    Bill getBillById(Long id);
-    Payment makePayment(Long billId, Payment payment);
-    InsuranceClaim claimInsurance(Long billId, InsuranceClaim claim);
+    Bill createBill(Long patientId, String billType);
+    Bill addBillItem(Long billId, BillItem item);
+    Bill removeBillItem(Long billId, Long itemId);
+    Bill finalizeBill(Long billId);
+    Bill getBill(Long billId);
+    List<Bill> getBillsByPatient(Long patientId);
+    Payment addPayment(Long billId, Payment payment);
     List<Bill> getAllBills();
-    Bill addBillItem(Long billId, com.task.hms.billing.model.BillItem item);
-    Bill updateBillItem(Long itemId, com.task.hms.billing.model.BillItem updatedItem);
-    Bill deleteBillItem(Long itemId);
-    List<Bill> getPendingBills();
-    BillingSummary getBillingSummary();
     Bill getConsolidatedIPDBill(Long admissionId);
     Bill finalizeConsolidatedIPDBill(Long admissionId);
-    List<BillDTO> getAllBillsAsDTO();
+    Bill finalizeConsolidatedIPDBill(Long admissionId, List<BillItem> customItems);
 }
