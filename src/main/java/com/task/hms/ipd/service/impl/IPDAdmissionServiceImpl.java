@@ -42,7 +42,9 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
         admission.setDoctorId(request.getDoctorId());
         admission.setWardId(request.getWardId());
         // Set the bed relationship
-        admission.setBed(bed);
+        IPDBed bedS = bedRepository.findById(request.getBedId())
+                    .orElseThrow(() -> new RuntimeException("Bed not available"));
+        admission.setBed(bedS);
         admission.setAttendantName(request.getAttendantName());
         admission.setAttendantContact(request.getAttendantContact());
         admission.setAdmissionNotes(request.getAdmissionNotes());
@@ -85,6 +87,32 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
         });
     }
 
+    @Override
+    @Transactional
+    public IPDAdmissionResponseDTO updateAdmission(IPDAdmissionUpdateRequestDTO request) {
+        IPDAdmission admission = admissionRepository.findById(request.getId())
+                .orElseThrow(() -> new RuntimeException("Admission not found"));
+        if (request.getDischargeDate() != null) {
+            admission.setDischargeDate(request.getDischargeDate());
+        }
+        if (request.getDischargeSummary() != null) {
+            admission.setDischargeSummary(request.getDischargeSummary());
+        }
+        if (request.getDischargeTime() != null) {
+            admission.setDischargeTime(request.getDischargeTime());
+        }
+        if (request.getTotalBill() != null) {
+            admission.setTotalBill(request.getTotalBill());
+        }
+//        if (request.getBedId() != null) {
+//            IPDBed bed = bedRepository.findById(request.getBedId())
+//                    .orElseThrow(() -> new RuntimeException("Bed not found"));
+//            admission.setBed(bed);
+//        }
+        admission = admissionRepository.save(admission);
+        return mapToResponseDTO(admission);
+    }
+
     private IPDAdmissionResponseDTO mapToResponseDTO(IPDAdmission admission) {
         IPDAdmissionResponseDTO dto = new IPDAdmissionResponseDTO();
         dto.setId(admission.getId());
@@ -110,6 +138,9 @@ public class IPDAdmissionServiceImpl implements IPDAdmissionService {
         dto.setStatus(admission.getStatus());
         dto.setAdmissionDate(admission.getAdmissionDate());
         dto.setDischargeDate(admission.getDischargeDate());
+        dto.setDischargeSummary(admission.getDischargeSummary());
+        dto.setDischargeTime(admission.getDischargeTime());
+        dto.setTotalBill(admission.getTotalBill());
         return dto;
     }
 }

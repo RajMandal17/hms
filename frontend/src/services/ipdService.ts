@@ -29,4 +29,5 @@ export const ipdService = {
   updateBed: (id: number, data: any) => apiService.put(`/ipd/beds/${id}`, data).then((res: AxiosResponse<any>) => res.data),
   deleteBed: (id: number) => apiService.delete(`/ipd/beds/${id}`).then((res: AxiosResponse<any>) => res.data),
   updateBedStatus: (id: number, status: string) => apiService.put(`/ipd/beds/${id}/status?status=${encodeURIComponent(status)}`).then((res: AxiosResponse<any>) => res.data),
+  updateAdmission: (id: number, data: any) => apiService.put(`/ipd/admissions/${id}`, data).then((res: AxiosResponse<any>) => res.data),
 };

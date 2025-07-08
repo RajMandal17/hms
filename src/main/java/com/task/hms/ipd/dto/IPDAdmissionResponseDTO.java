@@ -17,6 +17,9 @@ public class IPDAdmissionResponseDTO {
     private AdmissionStatus status;
     private LocalDateTime admissionDate;
     private LocalDateTime dischargeDate;
+    private String dischargeSummary;
+    private String dischargeTime;
+    private Double totalBill;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -46,4 +49,10 @@ public class IPDAdmissionResponseDTO {
     public void setAdmissionDate(LocalDateTime admissionDate) { this.admissionDate = admissionDate; }
     public LocalDateTime getDischargeDate() { return dischargeDate; }
     public void setDischargeDate(LocalDateTime dischargeDate) { this.dischargeDate = dischargeDate; }
+    public String getDischargeSummary() { return dischargeSummary; }
+    public void setDischargeSummary(String dischargeSummary) { this.dischargeSummary = dischargeSummary; }
+    public String getDischargeTime() { return dischargeTime; }
+    public void setDischargeTime(String dischargeTime) { this.dischargeTime = dischargeTime; }
+    public Double getTotalBill() { return totalBill; }
+    public void setTotalBill(Double totalBill) { this.totalBill = totalBill; }
 }

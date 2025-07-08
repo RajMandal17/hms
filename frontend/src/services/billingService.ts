@@ -60,4 +60,7 @@ export const updateBillItem = (itemId: number, item: BillItem) => api.put(`/bill
 export const deleteBillItem = (itemId: number) => api.delete(`/billing/bills/items/${itemId}`);
 export const getBillingSummary = () => api.get<BillingSummary>('/billing/summary');
 export const getConsolidatedIPDBill = (admissionId: number) => api.get(`/billing/ipd/consolidated/${admissionId}`);
-export const finalizeConsolidatedIPDBill = (admissionId: number) => api.post(`/billing/ipd/consolidated/${admissionId}/finalize`);
+export const finalizeConsolidatedIPDBill = (
+  admissionId: number,
+  customItems: { description: string; amount: number }[]
+) => api.post(`/billing/ipd/consolidated/${admissionId}/finalize`, customItems);

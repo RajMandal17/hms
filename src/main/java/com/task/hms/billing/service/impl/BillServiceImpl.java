@@ -1,13 +1,13 @@
 package com.task.hms.billing.service.impl;
 
 import com.task.hms.billing.model.Bill;
+import com.task.hms.billing.model.BillItem;
 import com.task.hms.billing.model.Payment;
-import com.task.hms.billing.model.InsuranceClaim;
-import com.task.hms.billing.model.BillingSummary;
+import com.task.hms.billing.model.FeeAndCharge;
 import com.task.hms.billing.repository.BillRepository;
-import com.task.hms.billing.repository.PaymentRepository;
-import com.task.hms.billing.repository.InsuranceClaimRepository;
 import com.task.hms.billing.repository.BillItemRepository;
+import com.task.hms.billing.repository.FeeAndChargeRepository;
+import com.task.hms.billing.repository.PaymentRepository;
 import com.task.hms.billing.service.BillService;
 import com.task.hms.ipd.model.IPDAdmission;
 import com.task.hms.ipd.model.IPDPrescription;
@@ -15,92 +15,93 @@ import com.task.hms.ipd.repository.IPDAdmissionRepository;
 import com.task.hms.ipd.repository.IPDPrescriptionRepository;
 import com.task.hms.pharmacy.model.PharmacySale;
 import com.task.hms.pharmacy.repository.PharmacySaleRepository;
-import com.task.hms.billing.model.BillItem;
-import com.task.hms.billing.model.WalkInPatient;
-import com.task.hms.billing.repository.WalkInPatientRepository;
-import com.task.hms.billing.dto.BillDTO;
-import com.task.hms.opd.model.Patient;
-import com.task.hms.opd.repository.PatientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BillServiceImpl implements BillService {
     @Autowired
     private BillRepository billRepository;
     @Autowired
-    private PaymentRepository paymentRepository;
-    @Autowired
-    private InsuranceClaimRepository insuranceClaimRepository;
-    @Autowired
     private BillItemRepository billItemRepository;
+    @Autowired
+    private FeeAndChargeRepository feeAndChargeRepository;
+    @Autowired
+    private PaymentRepository paymentRepository;
     @Autowired
     private IPDAdmissionRepository ipdAdmissionRepository;
     @Autowired
     private IPDPrescriptionRepository ipdPrescriptionRepository;
     @Autowired
     private PharmacySaleRepository pharmacySaleRepository;
-    @Autowired
-    private WalkInPatientRepository walkInPatientRepository;
-    @Autowired
-    private PatientRepository patientRepository;
 
     @Override
-    public BillingSummary getBillingSummary() {
-        List<Bill> bills = billRepository.findAll();
-        double totalRevenue = bills.stream().mapToDouble(b -> b.getTotalAmount() != null ? b.getTotalAmount() : 0.0).sum();
-        double totalPaid = bills.stream().mapToDouble(b -> b.getPaidAmount() != null ? b.getPaidAmount() : 0.0).sum();
-        double totalUnpaid = totalRevenue - totalPaid;
-        int billCount = bills.size();
-        return new BillingSummary(totalRevenue, totalPaid, totalUnpaid, billCount);
-    }
-
-    @Override
-    public List<Bill> getPendingBills() {
-        return billRepository.findByStatus("PENDING");
-    }
-
-    @Override
-    public Bill createBill(Bill bill) {
-        // If walk-in, save WalkInPatient and set walkInPatientId
-        if (bill.getPatientId() == null && bill.getWalkInPatient() != null) {
-            WalkInPatient walkIn = bill.getWalkInPatient();
-            walkIn = walkInPatientRepository.save(walkIn);
-            bill.setWalkInPatientId(walkIn.getId());
-        }
+    public Bill createBill(Long patientId, String billType) {
+        Bill bill = new Bill();
+        bill.setPatientId(patientId);
+        bill.setBillType(billType);
+        bill.setStatus("DRAFT");
+        bill.setTotalAmount(0.0);
+        bill.setPaidAmount(0.0);
         return billRepository.save(bill);
     }
 
     @Override
-    public Bill getBillById(Long id) {
-        return billRepository.findById(id).orElse(null);
+    public Bill addBillItem(Long billId, BillItem item) {
+        Bill bill = billRepository.findById(billId).orElse(null);
+        if (bill == null) return null;
+        item.setBill(bill);
+        billItemRepository.save(item);
+        List<BillItem> items = billItemRepository.findAll();
+        double total = items.stream().filter(i -> i.getBill().getId().equals(billId)).mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum();
+        bill.setTotalAmount(total);
+        return billRepository.save(bill);
     }
 
     @Override
-    public Payment makePayment(Long billId, Payment payment) {
+    public Bill removeBillItem(Long billId, Long itemId) {
+        Bill bill = billRepository.findById(billId).orElse(null);
+        if (bill == null) return null;
+        billItemRepository.deleteById(itemId);
+        List<BillItem> items = billItemRepository.findAll();
+        double total = items.stream().filter(i -> i.getBill().getId().equals(billId)).mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum();
+        bill.setTotalAmount(total);
+        return billRepository.save(bill);
+    }
+
+    @Override
+    public Bill finalizeBill(Long billId) {
+        Bill bill = billRepository.findById(billId).orElse(null);
+        if (bill == null) return null;
+        bill.setStatus("FINALIZED");
+        return billRepository.save(bill);
+    }
+
+    @Override
+    public Bill getBill(Long billId) {
+        return billRepository.findById(billId).orElse(null);
+    }
+
+    @Override
+    public List<Bill> getBillsByPatient(Long patientId) {
+        return billRepository.findAll().stream().filter(b -> b.getPatientId().equals(patientId)).toList();
+    }
+
+    @Override
+    public Payment addPayment(Long billId, Payment payment) {
         Bill bill = billRepository.findById(billId).orElse(null);
         if (bill == null) return null;
         payment.setBill(bill);
         paymentRepository.save(payment);
-        // Update paid amount and status
-        double totalPaid = bill.getPayments() != null ? bill.getPayments().stream().mapToDouble(Payment::getAmount).sum() : 0.0;
-        totalPaid += payment.getAmount();
-        bill.setPaidAmount(totalPaid);
-        bill.setStatus(totalPaid >= bill.getTotalAmount() ? "PAID" : "PARTIAL");
+        double paid = paymentRepository.findAll().stream().filter(p -> p.getBill().getId().equals(billId)).mapToDouble(p -> p.getAmount() != null ? p.getAmount() : 0.0).sum();
+        bill.setPaidAmount(paid);
+        if (paid >= bill.getTotalAmount()) bill.setStatus("PAID");
         billRepository.save(bill);
         return payment;
-    }
-
-    @Override
-    public InsuranceClaim claimInsurance(Long billId, InsuranceClaim claim) {
-        Bill bill = billRepository.findById(billId).orElse(null);
-        if (bill == null) return null;
-        claim.setBill(bill);
-        return insuranceClaimRepository.save(claim);
     }
 
     @Override
@@ -108,31 +109,19 @@ public class BillServiceImpl implements BillService {
         return billRepository.findAll();
     }
 
-    @Override
-    public Bill addBillItem(Long billId, com.task.hms.billing.model.BillItem item) {
-        Bill bill = billRepository.findById(billId).orElse(null);
-        if (bill == null) return null;
-        item.setBill(bill);
-        billItemRepository.save(item);
-        // Update total amount
-        double total = bill.getItems() != null ? bill.getItems().stream().mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum() : 0.0;
-        total += item.getAmount() != null ? item.getAmount() : 0.0;
-        bill.setTotalAmount(total);
-        return billRepository.save(bill);
-    }
-
+    // Consolidated IPD Bill: preview (does not persist)
     @Override
     public Bill getConsolidatedIPDBill(Long admissionId) {
-        Optional<IPDAdmission> admissionOpt = ipdAdmissionRepository.findById(admissionId);
-        if (admissionOpt.isEmpty()) return null;
-        IPDAdmission admission = admissionOpt.get();
-        List<BillItem> items = new ArrayList<>();
+        IPDAdmission admission = ipdAdmissionRepository.findById(admissionId).orElse(null);
+        if (admission == null) return null;
+        ArrayList<BillItem> items = new ArrayList<>();
         double total = 0.0;
-        // Room/bed charge (example: 1000 per day)
+        // Room charges
+        Double roomFee = feeAndChargeRepository.findByType("ROOM").map(FeeAndCharge::getAmount).orElse(1000.0);
         if (admission.getAdmissionDate() != null && admission.getDischargeDate() != null) {
-            long days = java.time.Duration.between(admission.getAdmissionDate(), admission.getDischargeDate()).toDays();
+            long days = Duration.between(admission.getAdmissionDate(), admission.getDischargeDate()).toDays();
             if (days == 0) days = 1;
-            double roomCharge = days * 1000.0;
+            double roomCharge = days * roomFee;
             BillItem roomItem = new BillItem();
             roomItem.setDescription("Room Charges (" + days + " days)");
             roomItem.setAmount(roomCharge);
@@ -141,24 +130,36 @@ public class BillServiceImpl implements BillService {
             items.add(roomItem);
             total += roomCharge;
         }
-        // IPD Prescriptions (medicines, not costed here, but can be extended)
-        List<IPDPrescription> prescriptions = ipdPrescriptionRepository.findByIpdAdmissionId(admissionId);
-        for (IPDPrescription pres : prescriptions) {
-            BillItem presItem = new BillItem();
-            presItem.setDescription("IPD Prescription #" + pres.getId());
-            presItem.setAmount(200.0); // Example: flat fee per prescription
-            presItem.setSourceType("PRESCRIPTION");
-            presItem.setSourceId(pres.getId());
-            items.add(presItem);
-            total += 200.0;
+        // Consultation fee
+        Double consultFee = feeAndChargeRepository.findByType("CONSULTATION").map(FeeAndCharge::getAmount).orElse(500.0);
+        if (admission.getDoctorId() != null) {
+            BillItem consultItem = new BillItem();
+            consultItem.setDescription("Consultation Fee");
+            consultItem.setAmount(consultFee);
+            consultItem.setSourceType("CONSULTATION");
+            consultItem.setSourceId(admission.getDoctorId());
+            items.add(consultItem);
+            total += consultFee;
         }
-        // Pharmacy sales for this patient during admission
-        List<PharmacySale> sales = pharmacySaleRepository.findAll();
-        for (PharmacySale sale : sales) {
+        // IPD Prescriptions
+        Double prescriptionFee = feeAndChargeRepository.findByType("PRESCRIPTION").map(FeeAndCharge::getAmount).orElse(200.0);
+        for (IPDPrescription pres : ipdPrescriptionRepository.findAll()) {
+            if (pres.getIpdAdmissionId().equals(admissionId)) {
+                BillItem presItem = new BillItem();
+                presItem.setDescription("IPD Prescription #" + pres.getId());
+                presItem.setAmount(prescriptionFee);
+                presItem.setSourceType("PRESCRIPTION");
+                presItem.setSourceId(pres.getId());
+                items.add(presItem);
+                total += prescriptionFee;
+            }
+        }
+        // Pharmacy sales during admission
+        for (PharmacySale sale : pharmacySaleRepository.findAll()) {
             if (sale.getPatientId() != null && sale.getPatientId().equals(admission.getPatientId()) &&
-                    sale.getDate() != null &&
-                    !sale.getDate().isBefore(admission.getAdmissionDate()) &&
-                    (admission.getDischargeDate() == null || !sale.getDate().isAfter(admission.getDischargeDate()))) {
+                sale.getDate() != null &&
+                !sale.getDate().isBefore(admission.getAdmissionDate()) &&
+                (admission.getDischargeDate() == null || !sale.getDate().isAfter(admission.getDischargeDate()))) {
                 BillItem saleItem = new BillItem();
                 saleItem.setDescription("Pharmacy Sale #" + sale.getId());
                 saleItem.setAmount(sale.getTotalAmount() != null ? sale.getTotalAmount() : 0.0);
@@ -179,9 +180,19 @@ public class BillServiceImpl implements BillService {
     }
 
     @Override
-    public Bill finalizeConsolidatedIPDBill(Long admissionId) {
+    public Bill finalizeConsolidatedIPDBill(Long admissionId, List<BillItem> customItems) {
         Bill draft = getConsolidatedIPDBill(admissionId);
         if (draft == null) return null;
+        // Add custom items if provided
+        if (customItems != null && !customItems.isEmpty()) {
+            for (BillItem item : customItems) {
+                item.setBill(draft);
+                draft.getItems().add(item);
+            }
+        }
+        // Recalculate total
+        double total = draft.getItems().stream().mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum();
+        draft.setTotalAmount(total);
         draft.setStatus("FINALIZED");
         Bill saved = billRepository.save(draft);
         for (BillItem item : draft.getItems()) {
@@ -192,66 +203,7 @@ public class BillServiceImpl implements BillService {
     }
 
     @Override
-    public List<BillDTO> getAllBillsAsDTO() {
-        List<Bill> bills = billRepository.findAll();
-        List<BillDTO> dtos = new ArrayList<>();
-        for (Bill bill : bills) {
-            String patientName = null;
-            if (bill.getPatientId() != null) {
-                Patient patient = patientRepository.findById(bill.getPatientId()).orElse(null);
-                if (patient != null) patientName = patient.getName();
-            } else if (bill.getWalkInPatientId() != null) {
-                WalkInPatient walkIn = walkInPatientRepository.findById(bill.getWalkInPatientId()).orElse(null);
-                if (walkIn != null) patientName = walkIn.getName();
-            }
-            dtos.add(new BillDTO(
-                bill.getId(),
-                patientName,
-                bill.getBillType(),
-                bill.getTotalAmount(),
-                bill.getPaidAmount(),
-                bill.getStatus(),
-                bill.getItems(),
-                bill.getPayments(),
-                bill.getInsuranceClaim()
-            ));
-        }
-        return dtos;
-    }
-
-    @Override
-    public Bill deleteBillItem(Long itemId) {
-        BillItem item = billItemRepository.findById(itemId).orElse(null);
-        if (item == null) return null;
-        Bill bill = item.getBill();
-        if (bill == null) return null;
-        // Remove the item from the bill's items list if present
-        if (bill.getItems() != null) {
-            bill.getItems().removeIf(i -> i.getId().equals(itemId));
-        }
-        // Delete the item from repository
-        billItemRepository.deleteById(itemId);
-        // Recalculate total amount
-        double total = bill.getItems() != null ? bill.getItems().stream().mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum() : 0.0;
-        bill.setTotalAmount(total);
-        return billRepository.save(bill);
-    }
-
-    @Override
-    public Bill updateBillItem(Long itemId, BillItem updatedItem) {
-        BillItem item = billItemRepository.findById(itemId).orElse(null);
-        if (item == null) return null;
-        Bill bill = item.getBill();
-        if (bill == null) return null;
-        // Update fields of the item
-        item.setDescription(updatedItem.getDescription());
-        item.setAmount(updatedItem.getAmount());
-        item.setSourceType(updatedItem.getSourceType());
-        item.setSourceId(updatedItem.getSourceId());
-        billItemRepository.save(item);
-        // Recalculate total amount
-        double total = bill.getItems() != null ? bill.getItems().stream().mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum() : 0.0;
-        bill.setTotalAmount(total);
-        return billRepository.save(bill);
+    public Bill finalizeConsolidatedIPDBill(Long admissionId) {
+        return finalizeConsolidatedIPDBill(admissionId, null);
     }
 }
