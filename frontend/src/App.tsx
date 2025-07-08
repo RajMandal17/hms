@@ -27,6 +27,8 @@ import { BrowserRouter } from 'react-router-dom';
 import BillingRefunds from './pages/BillingRefunds';
 import RefundAuditLogPage from './pages/RefundAuditLogPage';
 import IPDBilling from './pages/IPDBilling';
+import IPDVitals from './pages/IPDVitals';
+import IPDConsultations from './pages/IPDConsultations';
 
 function App() {
   return (
@@ -206,6 +208,26 @@ function App() {
                 <ProtectedRoute requiredRoles={['ADMIN', 'ACCOUNTANT', 'RECEPTIONIST']}>
                   <AppLayout>
                     <IPDBilling />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ipd/vitals"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'DOCTOR', 'NURSE']}>
+                  <AppLayout>
+                    <IPDVitals />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ipd/consultations"
+              element={
+                <ProtectedRoute requiredRoles={['ADMIN', 'DOCTOR', 'NURSE']}>
+                  <AppLayout>
+                    <IPDConsultations />
                   </AppLayout>
                 </ProtectedRoute>
               }

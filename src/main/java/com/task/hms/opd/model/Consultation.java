@@ -25,9 +25,16 @@ public class Consultation {
     private String symptoms;
     private String followUpDate;
 
-    // Store medicines as JSON string for now (can be improved with @ElementCollection)
-    @Lob
-    private String medicinesJson;
+
+    // Store prescribed medicines as BillItem entities (linked to this consultation)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "consultation_id")
+    private java.util.List<com.task.hms.billing.model.BillItem> medicines;
+
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "bill_id")
+    private com.task.hms.billing.model.Bill bill;
 
     private String prescriptionStatus; // e.g., PENDING, FULFILLED
 
@@ -51,8 +58,10 @@ public class Consultation {
     public void setSymptoms(String symptoms) { this.symptoms = symptoms; }
     public String getFollowUpDate() { return followUpDate; }
     public void setFollowUpDate(String followUpDate) { this.followUpDate = followUpDate; }
-    public String getMedicinesJson() { return medicinesJson; }
-    public void setMedicinesJson(String medicinesJson) { this.medicinesJson = medicinesJson; }
+    public java.util.List<com.task.hms.billing.model.BillItem> getMedicines() { return medicines; }
+    public void setMedicines(java.util.List<com.task.hms.billing.model.BillItem> medicines) { this.medicines = medicines; }
+    public com.task.hms.billing.model.Bill getBill() { return bill; }
+    public void setBill(com.task.hms.billing.model.Bill bill) { this.bill = bill; }
     public String getPrescriptionStatus() { return prescriptionStatus; }
     public void setPrescriptionStatus(String prescriptionStatus) { this.prescriptionStatus = prescriptionStatus; }
     public Double getFee() { return fee; }
