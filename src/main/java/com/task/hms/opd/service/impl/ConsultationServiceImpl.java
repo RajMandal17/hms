@@ -32,17 +32,11 @@ public class ConsultationServiceImpl implements ConsultationService {
     @Override
     @Transactional
     public Consultation addConsultation(ConsultationRequest request) {
-        // Debug: Log incoming medicines for troubleshooting null values
-        try {
-            System.out.println("Received medicines: " + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request.getMedicines()));
-        } catch (Exception e) {
-            System.out.println("Could not log medicines: " + e.getMessage());
-        }
         Consultation consultation = new Consultation();
         consultation.setAppointmentId(request.getAppointmentId());
         // Fetch the appointment and set doctorName from it
         Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
-            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+            .orElseThrow(() -> new RuntimeException("Appointment notrequest found"));
         consultation.setDoctorName(appointment.getDoctorName());
         consultation.setConsultationTime(java.time.LocalDateTime.now());
         consultation.setNotes(request.getNotes());
@@ -51,33 +45,18 @@ public class ConsultationServiceImpl implements ConsultationService {
         consultation.setSymptoms(request.getSymptoms());
         consultation.setFollowUpDate(request.getFollowUpDate());
         consultation.setFee(request.getFee());
-      //  consultation.setMedicines(request.getMedicines());
 
         // Handle medicines as BillItems (using ConsultationRequest.MedicineDTO)
         java.util.List<com.task.hms.billing.model.BillItem> medicines = new java.util.ArrayList<>();
         double total = 0.0;
         if (request.getMedicines() != null) {
             for (ConsultationRequest.MedicineDTO medDto : request.getMedicines()) {
-                medDto.setTotal(medDto.getTotal()*medDto.getQuantity());
                 com.task.hms.billing.model.BillItem med = new com.task.hms.billing.model.BillItem();
                 med.setDescription(medDto.getName() + (medDto.getQuantity() != null ? " x" + medDto.getQuantity() : ""));
-                // Defensive conversion for amount
-                Double amount = 0.0;
-                try {
-                    Double totalField = medDto.getTotal();
-                    Integer quantityField = medDto.getQuantity();
-                    if (totalField != null && quantityField != null && quantityField > 0) {
-                        amount = totalField;
-                    } else if (totalField != null) {
-                        amount = totalField;
-                    }
-                } catch (Exception e) {
-                    amount = 0.0;
-                }
-                med.setAmount(amount);
+                med.setAmount(medDto.getTotal() != null ? medDto.getTotal() : 0.0);
                 med.setSourceType("MEDICINE");
                 medicines.add(med);
-                total += amount;
+                total += med.getAmount();
             }
         }
         consultation.setMedicines(medicines);
@@ -198,9 +177,7 @@ public class ConsultationServiceImpl implements ConsultationService {
                 for (ConsultationRequest.MedicineDTO medDto : request.getMedicines()) {
                     com.task.hms.billing.model.BillItem med = new com.task.hms.billing.model.BillItem();
                     med.setDescription(medDto.getName() + (medDto.getQuantity() != null ? " x" + medDto.getQuantity() : ""));
-                    // Use total as the total price for the bill item (not price per unit)
-                    Double amount = medDto.getTotal() != null ? medDto.getTotal() : 0.0;
-                    med.setAmount(amount);
+                    med.setAmount(medDto.getTotal() != null ? medDto.getTotal() : 0.0);
                     med.setSourceType("MEDICINE");
                     medicines.add(med);
                     total += med.getAmount();
