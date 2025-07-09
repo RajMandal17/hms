@@ -17,4 +17,6 @@ public interface BillService {
     Bill getConsolidatedIPDBill(Long admissionId);
     Bill finalizeConsolidatedIPDBill(Long admissionId);
     Bill finalizeConsolidatedIPDBill(Long admissionId, List<BillItem> customItems);
+    List<Bill> getPendingBills();
+    List<Bill> getPendingBillsByPatient(Long patientId);
 }

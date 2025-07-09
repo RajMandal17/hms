@@ -62,6 +62,8 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/payments/record").hasAnyRole("ADMIN", "ACCOUNTANT", "CASHIER")
                 // Restrict updating admissions to ADMIN, DOCTOR, BILLING roles
                 .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/ipd/admissions/**").hasAnyRole("ADMIN", "DOCTOR", "BILLING")
+                // Allow all requests to /api/insurance/** endpoints for development/testing
+                .requestMatchers("/api/insurance/**").permitAll()
                 // Allow all requests to /api/billing/** endpoints for development/testing
                 .requestMatchers("/api/billing/**").permitAll()
                 // All other requests require authentication

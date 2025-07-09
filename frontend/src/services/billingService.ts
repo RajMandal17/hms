@@ -64,3 +64,4 @@ export const finalizeConsolidatedIPDBill = (
   admissionId: number,
   customItems: { description: string; amount: number }[]
 ) => api.post(`/billing/ipd/consolidated/${admissionId}/finalize`, customItems);
+export const getBillsByPatient = (patientId: number) => api.get(`/billing/bills/patient/${patientId}`);

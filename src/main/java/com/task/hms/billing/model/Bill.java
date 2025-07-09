@@ -16,6 +16,7 @@ public class Bill {
     private String status; // DRAFT, FINALIZED, PAID
 
     @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<BillItem> items;
 
     public Long getId() { return id; }

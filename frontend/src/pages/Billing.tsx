@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bill, InsuranceClaim, createBill, getAllBills, claimInsurance, downloadBillPdf } from '../services/billingService';
+import { Bill, InsuranceClaim, createBill, getAllBills, claimInsurance, downloadBillPdf, getBillsByPatient } from '../services/billingService';
 import { Payment, recordPayment } from '../services/paymentService';
 import { patientService } from '../services/patientService';
 import { ConsultationService } from '../services/consultationService';
@@ -48,6 +48,19 @@ const Billing: React.FC = () => {
   useEffect(() => {
     if (selectedPatient) {
       setIsWalkIn(false);
+      // Fetch bills for selected patient
+      getBillsByPatient(selectedPatient.id).then(res => {
+        setBills(Array.isArray(res.data) ? res.data : []);
+      });
+      // Fetch pending bills for this patient
+      fetch(`/api/billing/bills/pending?patientId=${selectedPatient.id}`)
+        .then(res => res.json())
+        .then(data => {
+          // You can handle pending bills here if needed
+          // Example: setPendingBills(data);
+        })
+        .catch(() => {/* handle error if needed */});
+      // Fetch expenses
       Promise.all([
         consultationService.getConsultationsByPatientId(selectedPatient.id),
         ipdService.getAdmissions(),
@@ -82,6 +95,7 @@ const Billing: React.FC = () => {
     } else {
       setPatientExpenses([]);
       setTotalExpenses(0);
+      setBills([]);
     }
   }, [selectedPatient]);
 
@@ -234,80 +248,19 @@ const Billing: React.FC = () => {
             {(() => {
               const opdTotal = bills.filter(b => b.patientId === selectedPatient.id && b.billType && b.billType.toUpperCase().includes('OPD')).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
               const ipdTotal = bills.filter(b => b.patientId === selectedPatient.id && b.billType && b.billType.toUpperCase().includes('IPD')).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-              const total = opdTotal + ipdTotal;
+              const pharmacyTotal = bills.filter(b => b.patientId === selectedPatient.id && b.billType && b.billType.toUpperCase().includes('PHARMACY')).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+              const total = opdTotal + ipdTotal + pharmacyTotal;
               return (
                 <div>
                   <div className="mb-1">OPD Total: <b>{opdTotal}</b></div>
                   <div className="mb-1">IPD Total: <b>{ipdTotal}</b></div>
+                  <div className="mb-1">Pharmacy Total: <b>{pharmacyTotal}</b></div>
                   <div className="mb-1">Grand Total: <b>{total}</b></div>
                 </div>
               );
             })()}
           </div>
         )}
-        <button
-          onClick={async () => {
-            if (isWalkIn) {
-              // Validation for walk-in
-              if (!walkInDetails.name.trim()) {
-                setWalkInError('Enter walk-in name');
-                return;
-              }
-              if (walkInDetails.expenses.length === 0 || walkInDetails.expenses.some((e: any) => !e.description.trim() || isNaN(e.amount) || e.amount <= 0)) {
-                setWalkInError('Enter at least one valid expense (description and amount > 0)');
-                return;
-              }
-              setWalkInError(null);
-              const total = walkInDetails.expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
-              setBillLoading(true);
-              setBillError(null);
-              try {
-                const res = await createBill({
-                  walkInPatient: {
-                    name: walkInDetails.name,
-                    phone: walkInDetails.phone,
-                    address: walkInDetails.address
-                  },
-                  billType: 'Pharmacy',
-                  totalAmount: total,
-                  items: walkInDetails.expenses.map((e: any) => ({ description: e.description, amount: e.amount }))
-                } as any);
-                setBills(Array.isArray(res.data) ? [...bills, ...res.data] : [...bills]);
-                setWalkInDetails({ name: '', phone: '', address: '', expenses: [{ description: '', amount: 0 }] });
-              } catch (e) {
-                setBillError('Failed to create bill');
-              } finally {
-                setBillLoading(false);
-              }
-            } else if (selectedPatient) {
-              if (patientExpenses.length === 0) {
-                setBillError('No expenses found for this patient');
-                return;
-              }
-              setBillError(null);
-              setBillLoading(true);
-              try {
-                const res = await createBill({
-                  patientId: selectedPatient.id,
-                  billType: 'All',
-                  totalAmount: totalExpenses,
-                  items: patientExpenses.map(e => ({ description: `${e.type}: ${e.description}`, amount: e.amount }))
-                } as any);
-                setBills(Array.isArray(res.data) ? [...bills, ...res.data] : [...bills]);
-                setSelectedPatient(null);
-              } catch (e) {
-                setBillError('Failed to create bill');
-              } finally {
-                setBillLoading(false);
-              }
-            }
-          }}
-          className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
-          disabled={billLoading}
-        >
-          {billLoading ? 'Creating Bill...' : 'Create Bill'}
-        </button>
-        {billError && <div className="text-red-500 mt-2">{billError}</div>}
       </div>
       <div className="mb-6">
         <h3 className="font-semibold">All Bills</h3>
@@ -331,7 +284,7 @@ const Billing: React.FC = () => {
             ) : (
               bills.map(bill => {
                 // Use patientName from BillDTO for both registered and walk-in
-                const patientDisplay = bill.patientName || '-';
+                const patientDisplay = patients.find(p => p.id === bill.patientId)?.name || '-';
                 return (
                   <tr key={bill.id} className={selectedBill?.id === bill.id ? 'bg-gray-100' : ''}>
                     <td className="border px-2">{bill.id}</td>
@@ -366,18 +319,19 @@ const Billing: React.FC = () => {
                 setPaymentError(null);
                 try {
                   if (!selectedBill || !payment.amount || !payment.mode) return;
-                  // Fix: Send bill as an object with id for backend compatibility
                   const paymentData: Payment = {
                     amount: payment.amount!,
                     mode: payment.mode!,
-                    bill: selectedBill ? { id: selectedBill.id! } : undefined, // ensure id is number
-                    patientId: selectedBill?.patientId,
+                    bill: { id: selectedBill.id! },
+                    patientId: selectedBill.patientId,
                     reference: payment.reference || '',
                   };
                   await recordPayment(paymentData);
+                  // Fetch updated bills to reflect new status
                   const res = await getAllBills();
                   setBills(Array.isArray(res.data) ? res.data : []);
                   setPayment({});
+                  setSelectedBill(null); // Optionally deselect after payment
                 } catch (e) {
                   setPaymentError('Failed to make payment');
                 } finally {
@@ -385,7 +339,7 @@ const Billing: React.FC = () => {
                 }
               }}
               className="bg-green-500 text-white px-2 py-1 rounded"
-              disabled={paymentLoading}
+              disabled={paymentLoading || (selectedBill && selectedBill.status === 'PAID')}
             >
               {paymentLoading ? 'Processing...' : 'Pay'}
             </button>

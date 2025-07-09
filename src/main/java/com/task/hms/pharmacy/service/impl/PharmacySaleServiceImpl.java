@@ -54,13 +54,13 @@ public class PharmacySaleServiceImpl implements PharmacySaleService {
             Bill bill = billRepository.findAll().stream()
                 .filter(b -> b.getPatientId() != null && b.getPatientId().equals(savedSale.getPatientId()) &&
                             "PHARMACY".equalsIgnoreCase(b.getBillType()) &&
-                            (b.getStatus() == null || b.getStatus().equalsIgnoreCase("DRAFT")))
+                            (b.getStatus() == null || b.getStatus().equalsIgnoreCase("PENDING")))
                 .findFirst()
                 .orElseGet(() -> {
                     Bill newBill = new Bill();
                     newBill.setPatientId(savedSale.getPatientId());
                     newBill.setBillType("PHARMACY");
-                    newBill.setStatus("DRAFT");
+                    newBill.setStatus("PENDING");
                     newBill.setTotalAmount(0.0);
                     newBill.setPaidAmount(0.0);
                     return billRepository.save(newBill);

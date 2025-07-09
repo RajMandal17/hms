@@ -31,4 +31,27 @@ public class BillingController {
         if (bill == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(bill);
     }
+
+    @GetMapping("/bills/patient/{patientId}")
+    public ResponseEntity<java.util.List<Bill>> getBillsByPatient(@PathVariable Long patientId) {
+        java.util.List<Bill> bills = billService.getBillsByPatient(patientId);
+        return ResponseEntity.ok(bills);
+    }
+
+    @GetMapping("/bills/pending")
+    public ResponseEntity<java.util.List<Bill>> getPendingBills(@RequestParam(value = "patientId", required = false) Long patientId) {
+        java.util.List<Bill> pendingBills;
+        if (patientId != null) {
+            pendingBills = billService.getPendingBillsByPatient(patientId);
+        } else {
+            pendingBills = billService.getPendingBills();
+        }
+        return ResponseEntity.ok(pendingBills);
+    }
+
+    @GetMapping("/bills")
+    public ResponseEntity<java.util.List<Bill>> getAllBills() {
+        java.util.List<Bill> bills = billService.getAllBills();
+        return ResponseEntity.ok(bills);
+    }
 }

@@ -44,7 +44,7 @@ public class BillServiceImpl implements BillService {
         Bill bill = new Bill();
         bill.setPatientId(patientId);
         bill.setBillType(billType);
-        bill.setStatus("DRAFT");
+        bill.setStatus("PENDING");
         bill.setTotalAmount(0.0);
         bill.setPaidAmount(0.0);
         return billRepository.save(bill);
@@ -179,7 +179,7 @@ public class BillServiceImpl implements BillService {
         bill.setBillType("IPD");
         bill.setTotalAmount(total);
         bill.setPaidAmount(0.0);
-        bill.setStatus("DRAFT");
+        bill.setStatus("PENDING");
         bill.setItems(items);
         return bill;
     }
@@ -202,7 +202,7 @@ public class BillServiceImpl implements BillService {
         // Recalculate total
         double total = draft.getItems().stream().mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum();
         draft.setTotalAmount(total);
-        draft.setStatus("FINALIZED");
+        draft.setStatus("PENDING");
         Bill saved = billRepository.save(draft);
         for (BillItem item : draft.getItems()) {
             item.setBill(saved);
@@ -214,5 +214,20 @@ public class BillServiceImpl implements BillService {
     @Override
     public Bill finalizeConsolidatedIPDBill(Long admissionId) {
         return finalizeConsolidatedIPDBill(admissionId, null);
+    }
+
+    @Override
+    public List<Bill> getPendingBills() {
+        return billRepository.findAll().stream()
+                .filter(b -> "PENDING".equalsIgnoreCase(b.getStatus()))
+                .toList();
+    }
+
+    @Override
+    public List<Bill> getPendingBillsByPatient(Long patientId) {
+        return billRepository.findAll().stream()
+                .filter(b -> b.getPatientId() != null && b.getPatientId().equals(patientId))
+                .filter(b -> "PENDING".equalsIgnoreCase(b.getStatus()))
+                .toList();
     }
 }
