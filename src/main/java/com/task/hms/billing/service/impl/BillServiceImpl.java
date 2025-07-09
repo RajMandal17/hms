@@ -54,6 +54,11 @@ public class BillServiceImpl implements BillService {
     public Bill addBillItem(Long billId, BillItem item) {
         Bill bill = billRepository.findById(billId).orElse(null);
         if (bill == null) return null;
+        // Ensure custom/manual items have sourceType set
+        if (item.getSourceType() == null || item.getSourceType().trim().isEmpty()) {
+            item.setSourceType("CUSTOM");
+            item.setSourceId(billId);
+        }
         item.setBill(bill);
         billItemRepository.save(item);
         List<BillItem> items = billItemRepository.findAll();
@@ -186,6 +191,10 @@ public class BillServiceImpl implements BillService {
         // Add custom items if provided
         if (customItems != null && !customItems.isEmpty()) {
             for (BillItem item : customItems) {
+                // Ensure custom/manual items have sourceType set
+                if (item.getSourceType() == null || item.getSourceType().trim().isEmpty()) {
+                    item.setSourceType("CUSTOM");
+                }
                 item.setBill(draft);
                 draft.getItems().add(item);
             }

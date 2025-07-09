@@ -25,6 +25,7 @@ const Billing: React.FC = () => {
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
   const [isWalkIn, setIsWalkIn] = useState<boolean>(false);
   const [walkInDetails, setWalkInDetails] = useState<any>({ name: '', phone: '', address: '', expenses: [{ description: '', amount: 0 }] });
+  const [walkInError, setWalkInError] = useState<string | null>(null);
   const [claimLoading, setClaimLoading] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
@@ -207,7 +208,7 @@ const Billing: React.FC = () => {
                     newExps[idx].description = e.target.value;
                     setWalkInDetails({ ...walkInDetails, expenses: newExps });
                   }} className="border p-1 mr-1" />
-                  <input placeholder="Amount" type="number" value={exp.amount} onChange={e => {
+                  <input placeholder="Amount" type="number" min="0" value={exp.amount} onChange={e => {
                     const newExps = [...walkInDetails.expenses];
                     newExps[idx].amount = Number(e.target.value);
                     setWalkInDetails({ ...walkInDetails, expenses: newExps });
@@ -221,44 +222,42 @@ const Billing: React.FC = () => {
               <button onClick={() => setWalkInDetails({ ...walkInDetails, expenses: [...walkInDetails.expenses, { description: '', amount: 0 }] })} className="text-blue-500">Add Expense</button>
             </div>
             <div className="mt-2 font-semibold">Total: {walkInDetails.expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0)}</div>
+            {walkInError && <div className="text-red-500 mt-1">{walkInError}</div>}
           </div>
-          
         ) : selectedPatient && (
           <div className="mb-2">
             <div className="mb-1">Name: {selectedPatient.name || ''}</div>
             <div className="mb-1">Gender: {selectedPatient.gender || 'N/A'}</div>
-            
             <div className="mb-1">Phone: {selectedPatient.contact || 'N/A'}</div>
             <div className="mb-1">Email: {selectedPatient.email || 'N/A'}</div>
-              
-            <h4 className="font-medium mt-2">Expenses</h4>
-            <table className="min-w-full border mb-2">
-              <thead>
-                <tr>
-                  <th className="border px-2">Type</th>
-                  <th className="border px-2">Description</th>
-                  <th className="border px-2">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {patientExpenses.map((exp, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2">{exp.type}</td>
-                    <td className="border px-2">{exp.description}</td>
-                    <td className="border px-2">{exp.amount}</td>
-                  </tr>
-                  
-                ))}
-                
-              </tbody>
-            </table>
-            <div className="font-semibold">Total: {totalExpenses}</div>
+            <h4 className="font-medium mt-2">Bill Totals</h4>
+            {(() => {
+              const opdTotal = bills.filter(b => b.patientId === selectedPatient.id && b.billType && b.billType.toUpperCase().includes('OPD')).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+              const ipdTotal = bills.filter(b => b.patientId === selectedPatient.id && b.billType && b.billType.toUpperCase().includes('IPD')).reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+              const total = opdTotal + ipdTotal;
+              return (
+                <div>
+                  <div className="mb-1">OPD Total: <b>{opdTotal}</b></div>
+                  <div className="mb-1">IPD Total: <b>{ipdTotal}</b></div>
+                  <div className="mb-1">Grand Total: <b>{total}</b></div>
+                </div>
+              );
+            })()}
           </div>
         )}
         <button
           onClick={async () => {
             if (isWalkIn) {
-              if (!walkInDetails.name || walkInDetails.expenses.length === 0) return alert('Enter walk-in details and at least one expense');
+              // Validation for walk-in
+              if (!walkInDetails.name.trim()) {
+                setWalkInError('Enter walk-in name');
+                return;
+              }
+              if (walkInDetails.expenses.length === 0 || walkInDetails.expenses.some((e: any) => !e.description.trim() || isNaN(e.amount) || e.amount <= 0)) {
+                setWalkInError('Enter at least one valid expense (description and amount > 0)');
+                return;
+              }
+              setWalkInError(null);
               const total = walkInDetails.expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
               setBillLoading(true);
               setBillError(null);
@@ -281,9 +280,12 @@ const Billing: React.FC = () => {
                 setBillLoading(false);
               }
             } else if (selectedPatient) {
-              if (patientExpenses.length === 0) return alert('No expenses found for this patient');
-              setBillLoading(true);
+              if (patientExpenses.length === 0) {
+                setBillError('No expenses found for this patient');
+                return;
+              }
               setBillError(null);
+              setBillLoading(true);
               try {
                 const res = await createBill({
                   patientId: selectedPatient.id,

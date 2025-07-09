@@ -14,6 +14,11 @@ import com.task.hms.ipd.repository.IPDPrescriptionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.task.hms.billing.model.Bill;
+import com.task.hms.billing.model.BillItem;
+import com.task.hms.billing.repository.BillRepository;
+import com.task.hms.billing.repository.BillItemRepository;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,9 +39,50 @@ public class PharmacySaleServiceImpl implements PharmacySaleService {
     @Autowired
     private IPDPrescriptionRepository ipdPrescriptionRepository;
 
+    @Autowired
+    private BillRepository billRepository;
+    @Autowired
+    private BillItemRepository billItemRepository;
+
     @Override
     public PharmacySale createSale(PharmacySale sale) {
-        return saleRepository.save(sale);
+        PharmacySale savedSale = saleRepository.save(sale);
+
+        // Only create BillItem if patientId and totalAmount are present
+        if (savedSale.getPatientId() != null && savedSale.getTotalAmount() != null) {
+            // Find existing draft PHARMACY bill for this patient, or create new
+            Bill bill = billRepository.findAll().stream()
+                .filter(b -> b.getPatientId() != null && b.getPatientId().equals(savedSale.getPatientId()) &&
+                            "PHARMACY".equalsIgnoreCase(b.getBillType()) &&
+                            (b.getStatus() == null || b.getStatus().equalsIgnoreCase("DRAFT")))
+                .findFirst()
+                .orElseGet(() -> {
+                    Bill newBill = new Bill();
+                    newBill.setPatientId(savedSale.getPatientId());
+                    newBill.setBillType("PHARMACY");
+                    newBill.setStatus("DRAFT");
+                    newBill.setTotalAmount(0.0);
+                    newBill.setPaidAmount(0.0);
+                    return billRepository.save(newBill);
+                });
+
+            BillItem billItem = new BillItem();
+            billItem.setBill(bill);
+            billItem.setDescription("Pharmacy Sale #" + savedSale.getId());
+            billItem.setAmount(savedSale.getTotalAmount());
+            billItem.setSourceType("PHARMACY");
+            billItem.setSourceId(savedSale.getId());
+            billItemRepository.save(billItem);
+
+            // Update bill total
+            double total = billItemRepository.findAll().stream()
+                .filter(i -> i.getBill().getId().equals(bill.getId()))
+                .mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0)
+                .sum();
+            bill.setTotalAmount(total);
+            billRepository.save(bill);
+        }
+        return savedSale;
     }
 
     @Override
