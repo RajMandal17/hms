@@ -359,13 +359,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onPatientRegiste
               </ListItemButton>
               <ListItemButton
                 sx={{ borderRadius: 2, mb: 0.5 }}
-                onClick={() => navigate('/billing/payments')}
-                selected={location.pathname.startsWith('/billing/payments')}
-              >
-                <ListItemText primary="Payments" />
-              </ListItemButton>
-              <ListItemButton
-                sx={{ borderRadius: 2, mb: 0.5 }}
                 onClick={() => navigate('/billing/insurance-claims')}
                 selected={location.pathname.startsWith('/billing/insurance-claims')}
               >

@@ -4,10 +4,12 @@ import com.task.hms.billing.model.Bill;
 import com.task.hms.billing.model.BillItem;
 import com.task.hms.billing.model.Payment;
 import com.task.hms.billing.model.FeeAndCharge;
+import com.task.hms.billing.model.Refund;
 import com.task.hms.billing.repository.BillRepository;
 import com.task.hms.billing.repository.BillItemRepository;
 import com.task.hms.billing.repository.FeeAndChargeRepository;
 import com.task.hms.billing.repository.PaymentRepository;
+import com.task.hms.billing.repository.RefundRepository;
 import com.task.hms.billing.service.BillService;
 import com.task.hms.ipd.model.IPDAdmission;
 import com.task.hms.ipd.model.IPDPrescription;
@@ -32,6 +34,8 @@ public class BillServiceImpl implements BillService {
     private FeeAndChargeRepository feeAndChargeRepository;
     @Autowired
     private PaymentRepository paymentRepository;
+    @Autowired
+    private RefundRepository refundRepository;
     @Autowired
     private IPDAdmissionRepository ipdAdmissionRepository;
     @Autowired
@@ -229,5 +233,28 @@ public class BillServiceImpl implements BillService {
                 .filter(b -> b.getPatientId() != null && b.getPatientId().equals(patientId))
                 .filter(b -> "PENDING".equalsIgnoreCase(b.getStatus()))
                 .toList();
+    }
+
+    @Override
+    public void refundBill(Long billId, Double amount, String reason, String processedBy) {
+        Bill bill = billRepository.findById(billId).orElse(null);
+        if (bill == null) throw new IllegalArgumentException("Bill not found");
+        if (amount == null || amount <= 0) throw new IllegalArgumentException("Invalid refund amount");
+        if (bill.getPaidAmount() == null || bill.getPaidAmount() < amount) throw new IllegalArgumentException("Refund amount exceeds paid amount");
+        Refund refund = new Refund();
+        refund.setBill(bill);
+        refund.setAmount(amount);
+        refund.setReason(reason);
+        refund.setRefundedAt(java.time.LocalDateTime.now());
+        refund.setStatus("PROCESSED");
+        refundRepository.save(refund);
+        double newPaidAmount = bill.getPaidAmount() - amount;
+        bill.setPaidAmount(newPaidAmount);
+        if (newPaidAmount <= 0) {
+            bill.setStatus("REFUNDED");
+        } else if (bill.getTotalAmount() != null && newPaidAmount < bill.getTotalAmount()) {
+            bill.setStatus("PARTIALLY_PAID");
+        }
+        billRepository.save(bill);
     }
 }

@@ -672,21 +672,13 @@ export const Dashboard: React.FC = () => {
                           {patient.firstName?.[0] || patient.name?.[0] || '?'}
                         </Avatar>
                         <ListItemText
-                          primary={
-                            <Typography variant="body1" fontWeight={500}>
-                              {patient.name || `${patient.firstName || ''} ${patient.lastName || ''}`}
-                            </Typography>
-                          }
-                          secondary={
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">
-                                {patient.gender} • {patient.age} years • {patient.phone || patient.contact}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {patient.address}
-                              </Typography>
-                            </Box>
-                          }
+                          primary={patient.name || `${patient.firstName || ''} ${patient.lastName || ''}`}
+                          primaryTypographyProps={{ variant: "body1", fontWeight: 500 }}
+                          secondary={`${patient.gender} • ${patient.age} years • ${patient.phone || patient.contact}${patient.address ? `\n${patient.address}` : ''}`}
+                          secondaryTypographyProps={{ 
+                            component: 'span',
+                            style: { whiteSpace: 'pre-line' }
+                          }}
                         />
                         <Chip
                           label="Active"
@@ -724,11 +716,8 @@ export const Dashboard: React.FC = () => {
                       {recentAppointments.map((appointment) => (
                         <ListItem key={appointment.id} sx={{ px: 0, py: 1 }}>
                           <ListItemText
-                            primary={
-                              <Typography variant="body2" fontWeight={500}>
-                                {appointment.patient?.firstName || 'Unknown Patient'}
-                              </Typography>
-                            }
+                            primary={appointment.patient?.name || 'Unknown Patient'}
+                            primaryTypographyProps={{ variant: "body2", fontWeight: 500 }}
                             secondary={
                               <Typography variant="caption" color="text.secondary">
                                 {new Date(appointment.appointmentDate).toLocaleDateString()} at{' '}

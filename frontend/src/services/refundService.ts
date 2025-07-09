@@ -11,7 +11,7 @@ export interface Refund {
 }
 
 export const processRefund = (billId: number, amount: number, reason: string, processedBy: string) =>
-  api.post(`/billing/refunds?billId=${billId}&amount=${amount}&reason=${encodeURIComponent(reason)}&processedBy=${encodeURIComponent(processedBy)}`);
+  api.post(`/billing/refunds/process?billId=${billId}&amount=${amount}&reason=${encodeURIComponent(reason)}&processedBy=${encodeURIComponent(processedBy)}`);
 
 export const getRefundsByBill = (billId: number) =>
   api.get(`/billing/refunds/by-bill/${billId}`);

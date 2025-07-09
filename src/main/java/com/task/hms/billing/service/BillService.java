@@ -19,4 +19,6 @@ public interface BillService {
     Bill finalizeConsolidatedIPDBill(Long admissionId, List<BillItem> customItems);
     List<Bill> getPendingBills();
     List<Bill> getPendingBillsByPatient(Long patientId);
+    // Refund logic
+    void refundBill(Long billId, Double amount, String reason, String processedBy);
 }

@@ -20,7 +20,6 @@ import PharmacyMedicines from './pages/PharmacyMedicines';
 import PharmacyBatches from './pages/PharmacyBatches';
 import PharmacySales from './pages/PharmacySales';
 import PharmacyReturns from './pages/PharmacyReturns';
-import BillingPayments from './pages/BillingPayments';
 import BillingInsuranceClaims from './pages/BillingInsuranceClaims';
 import { IPDBeds } from './pages/IPDBeds';
 import { BrowserRouter } from 'react-router-dom';
@@ -148,16 +147,6 @@ function App() {
                 <ProtectedRoute requiredRoles={['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT']}>
                   <AppLayout>
                     <Billing />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/billing/payments"
-              element={
-                <ProtectedRoute requiredRoles={['ADMIN', 'ACCOUNTANT']}>
-                  <AppLayout>
-                    <BillingPayments />
                   </AppLayout>
                 </ProtectedRoute>
               }

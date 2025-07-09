@@ -1,8 +1,8 @@
 import { apiService as api } from './api';
 
 // Fetch pending bills (for billing alerts)
-export const getPendingBills = () => api.get('/billing/bills/pending');
-export const downloadBillPdf = (billId: number) => api.get(`/billing/bills/${billId}/pdf`, { responseType: 'blob' });
+export const getPendingBills = () => api.get('/api/billing/bills/pending');
+export const downloadBillPdf = (billId: number) => api.get(`/api/billing/bills/${billId}/pdf`, { responseType: 'blob' });
 
 export interface Bill {
   id?: number;
