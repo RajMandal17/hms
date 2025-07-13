@@ -1,0 +1,34 @@
+#!/bin/bash
+# Stop HMS Application
+set -e
+
+echo "🛑 Stopping HMS Application..."
+
+# Kill saved PIDs if they exist
+if [ -f .backend_pid ]; then
+    BACKEND_PID=$(cat .backend_pid)
+    echo "🔧 Stopping backend (PID: $BACKEND_PID)..."
+    kill -9 $BACKEND_PID 2>/dev/null || echo "Backend process not found"
+    rm -f .backend_pid
+fi
+
+if [ -f .frontend_pid ]; then
+    FRONTEND_PID=$(cat .frontend_pid)
+    echo "🔧 Stopping frontend (PID: $FRONTEND_PID)..."
+    kill -9 $FRONTEND_PID 2>/dev/null || echo "Frontend process not found"
+    rm -f .frontend_pid
+fi
+
+# Kill any remaining processes on ports 8080 and 3000
+echo "🔧 Killing any remaining processes on ports 8080 and 3000..."
+sudo lsof -ti:8080 | xargs sudo kill -9 2>/dev/null || echo "No process found on port 8080"
+sudo lsof -ti:3000 | xargs sudo kill -9 2>/dev/null || echo "No process found on port 3000"
+
+# Stop docker containers if any
+echo "📦 Stopping Docker containers..."
+sudo docker-compose down 2>/dev/null || echo "No Docker containers to stop"
+
+# Clean up log files
+rm -f backend.log
+
+echo "✅ HMS Application stopped successfully!"
