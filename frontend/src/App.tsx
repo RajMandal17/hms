@@ -29,6 +29,9 @@ import RefundAuditLogPage from './pages/RefundAuditLogPage';
 import IPDBilling from './pages/IPDBilling';
 import IPDVitals from './pages/IPDVitals';
 import IPDConsultations from './pages/IPDConsultations';
+import { PublicLayout } from './layouts/PublicLayout';
+import { HomePage } from './pages/public/HomePage';
+import { BookingPage } from './pages/public/BookingPage';
 
 function App() {
   return (
@@ -37,6 +40,11 @@ function App() {
       <AuthProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/book-appointment" element={<BookingPage />} />
+            </Route>
+
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
@@ -232,7 +240,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
           </Routes>
         </BrowserRouter>
       </AuthProvider>

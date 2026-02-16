@@ -41,40 +41,117 @@ public class Appointment {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-
     @Column(nullable = false)
     private String doctorName;
 
     @Column(nullable = false)
     private boolean reminderSent = false;
 
+    @Enumerated(EnumType.STRING)
+    private AppointmentSource source = AppointmentSource.OFFLINE;
+
     public enum Status {
         SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
     }
 
+    public enum AppointmentSource {
+        ONLINE, OFFLINE
+    }
+
     // Getters and setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getPatientId() { return patientId; }
-    public void setPatientId(Long patientId) { this.patientId = patientId; }
-    public Long getDoctorId() { return doctorId; }
-    public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
-    public LocalDate getAppointmentDate() { return appointmentDate; }
-    public void setAppointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; }
-    public LocalTime getAppointmentTime() { return appointmentTime; }
-    public void setAppointmentTime(LocalTime appointmentTime) { this.appointmentTime = appointmentTime; }
-    public String getReason() { return reason; }
-    public void setReason(String reason) { this.reason = reason; }
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    public String getDoctorName() { return doctorName; }
-    public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
-    public boolean isReminderSent() { return reminderSent; }
-    public void setReminderSent(boolean reminderSent) { this.reminderSent = reminderSent; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getPatientId() {
+        return patientId;
+    }
+
+    public void setPatientId(Long patientId) {
+        this.patientId = patientId;
+    }
+
+    public Long getDoctorId() {
+        return doctorId;
+    }
+
+    public void setDoctorId(Long doctorId) {
+        this.doctorId = doctorId;
+    }
+
+    public LocalDate getAppointmentDate() {
+        return appointmentDate;
+    }
+
+    public void setAppointmentDate(LocalDate appointmentDate) {
+        this.appointmentDate = appointmentDate;
+    }
+
+    public LocalTime getAppointmentTime() {
+        return appointmentTime;
+    }
+
+    public void setAppointmentTime(LocalTime appointmentTime) {
+        this.appointmentTime = appointmentTime;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public String getDoctorName() {
+        return doctorName;
+    }
+
+    public void setDoctorName(String doctorName) {
+        this.doctorName = doctorName;
+    }
+
+    public boolean isReminderSent() {
+        return reminderSent;
+    }
+
+    public void setReminderSent(boolean reminderSent) {
+        this.reminderSent = reminderSent;
+    }
 }
