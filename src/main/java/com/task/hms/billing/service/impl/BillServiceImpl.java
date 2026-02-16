@@ -53,7 +53,8 @@ public class BillServiceImpl implements BillService {
     @Override
     public Bill addBillItem(Long billId, BillItem item) {
         Bill bill = billRepository.findById(billId).orElse(null);
-        if (bill == null) return null;
+        if (bill == null)
+            return null;
         // Ensure custom/manual items have sourceType set
         if (item.getSourceType() == null || item.getSourceType().trim().isEmpty()) {
             item.setSourceType("CUSTOM");
@@ -62,7 +63,8 @@ public class BillServiceImpl implements BillService {
         item.setBill(bill);
         billItemRepository.save(item);
         List<BillItem> items = billItemRepository.findAll();
-        double total = items.stream().filter(i -> i.getBill().getId().equals(billId)).mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum();
+        double total = items.stream().filter(i -> i.getBill().getId().equals(billId))
+                .mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum();
         bill.setTotalAmount(total);
         return billRepository.save(bill);
     }
@@ -70,10 +72,12 @@ public class BillServiceImpl implements BillService {
     @Override
     public Bill removeBillItem(Long billId, Long itemId) {
         Bill bill = billRepository.findById(billId).orElse(null);
-        if (bill == null) return null;
+        if (bill == null)
+            return null;
         billItemRepository.deleteById(itemId);
         List<BillItem> items = billItemRepository.findAll();
-        double total = items.stream().filter(i -> i.getBill().getId().equals(billId)).mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum();
+        double total = items.stream().filter(i -> i.getBill().getId().equals(billId))
+                .mapToDouble(i -> i.getAmount() != null ? i.getAmount() : 0.0).sum();
         bill.setTotalAmount(total);
         return billRepository.save(bill);
     }
@@ -81,7 +85,8 @@ public class BillServiceImpl implements BillService {
     @Override
     public Bill finalizeBill(Long billId) {
         Bill bill = billRepository.findById(billId).orElse(null);
-        if (bill == null) return null;
+        if (bill == null)
+            return null;
         bill.setStatus("FINALIZED");
         return billRepository.save(bill);
     }
@@ -99,12 +104,15 @@ public class BillServiceImpl implements BillService {
     @Override
     public Payment addPayment(Long billId, Payment payment) {
         Bill bill = billRepository.findById(billId).orElse(null);
-        if (bill == null) return null;
+        if (bill == null)
+            return null;
         payment.setBill(bill);
         paymentRepository.save(payment);
-        double paid = paymentRepository.findAll().stream().filter(p -> p.getBill().getId().equals(billId)).mapToDouble(p -> p.getAmount() != null ? p.getAmount() : 0.0).sum();
+        double paid = paymentRepository.findAll().stream().filter(p -> p.getBill().getId().equals(billId))
+                .mapToDouble(p -> p.getAmount() != null ? p.getAmount() : 0.0).sum();
         bill.setPaidAmount(paid);
-        if (paid >= bill.getTotalAmount()) bill.setStatus("PAID");
+        if (paid >= bill.getTotalAmount())
+            bill.setStatus("PAID");
         billRepository.save(bill);
         return payment;
     }
@@ -118,14 +126,16 @@ public class BillServiceImpl implements BillService {
     @Override
     public Bill getConsolidatedIPDBill(Long admissionId) {
         IPDAdmission admission = ipdAdmissionRepository.findById(admissionId).orElse(null);
-        if (admission == null) return null;
+        if (admission == null)
+            return null;
         ArrayList<BillItem> items = new ArrayList<>();
         double total = 0.0;
         // Room charges
         Double roomFee = feeAndChargeRepository.findByType("ROOM").map(FeeAndCharge::getAmount).orElse(1000.0);
         if (admission.getAdmissionDate() != null && admission.getDischargeDate() != null) {
             long days = Duration.between(admission.getAdmissionDate(), admission.getDischargeDate()).toDays();
-            if (days == 0) days = 1;
+            if (days == 0)
+                days = 1;
             double roomCharge = days * roomFee;
             BillItem roomItem = new BillItem();
             roomItem.setDescription("Room Charges (" + days + " days)");
@@ -136,7 +146,8 @@ public class BillServiceImpl implements BillService {
             total += roomCharge;
         }
         // Consultation fee
-        Double consultFee = feeAndChargeRepository.findByType("CONSULTATION").map(FeeAndCharge::getAmount).orElse(500.0);
+        Double consultFee = feeAndChargeRepository.findByType("CONSULTATION").map(FeeAndCharge::getAmount)
+                .orElse(500.0);
         if (admission.getDoctorId() != null) {
             BillItem consultItem = new BillItem();
             consultItem.setDescription("Consultation Fee");
@@ -147,7 +158,8 @@ public class BillServiceImpl implements BillService {
             total += consultFee;
         }
         // IPD Prescriptions
-        Double prescriptionFee = feeAndChargeRepository.findByType("PRESCRIPTION").map(FeeAndCharge::getAmount).orElse(200.0);
+        Double prescriptionFee = feeAndChargeRepository.findByType("PRESCRIPTION").map(FeeAndCharge::getAmount)
+                .orElse(200.0);
         for (IPDPrescription pres : ipdPrescriptionRepository.findAll()) {
             if (pres.getIpdAdmissionId().equals(admissionId)) {
                 BillItem presItem = new BillItem();
@@ -162,9 +174,9 @@ public class BillServiceImpl implements BillService {
         // Pharmacy sales during admission
         for (PharmacySale sale : pharmacySaleRepository.findAll()) {
             if (sale.getPatientId() != null && sale.getPatientId().equals(admission.getPatientId()) &&
-                sale.getDate() != null &&
-                !sale.getDate().isBefore(admission.getAdmissionDate()) &&
-                (admission.getDischargeDate() == null || !sale.getDate().isAfter(admission.getDischargeDate()))) {
+                    sale.getDate() != null &&
+                    !sale.getDate().isBefore(admission.getAdmissionDate()) &&
+                    (admission.getDischargeDate() == null || !sale.getDate().isAfter(admission.getDischargeDate()))) {
                 BillItem saleItem = new BillItem();
                 saleItem.setDescription("Pharmacy Sale #" + sale.getId());
                 saleItem.setAmount(sale.getTotalAmount() != null ? sale.getTotalAmount() : 0.0);
@@ -187,7 +199,8 @@ public class BillServiceImpl implements BillService {
     @Override
     public Bill finalizeConsolidatedIPDBill(Long admissionId, List<BillItem> customItems) {
         Bill draft = getConsolidatedIPDBill(admissionId);
-        if (draft == null) return null;
+        if (draft == null)
+            return null;
         // Add custom items if provided
         if (customItems != null && !customItems.isEmpty()) {
             for (BillItem item : customItems) {
