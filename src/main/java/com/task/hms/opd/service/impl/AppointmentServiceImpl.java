@@ -34,6 +34,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public Appointment bookAppointment(AppointmentRequest request) {
         Appointment appointment = new Appointment();
+        // Check for double booking
+        if (appointmentRepository.existsByDoctorIdAndAppointmentDateAndAppointmentTime(request.getDoctorId(),
+                request.getAppointmentDate(), request.getAppointmentTime())) {
+            throw new RuntimeException("Slot unavailable. Please select another time.");
+        }
         appointment.setPatientId(request.getPatientId());
         appointment.setDoctorId(request.getDoctorId());
         appointment.setAppointmentDate(request.getAppointmentDate());
@@ -118,6 +123,12 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional
     public Appointment bookPublicAppointment(com.task.hms.opd.dto.PublicAppointmentRequestDTO request) {
+        // 0. Check for double booking first
+        if (appointmentRepository.existsByDoctorIdAndAppointmentDateAndAppointmentTime(request.getDoctorId(),
+                request.getAppointmentDate(), request.getAppointmentTime())) {
+            throw new RuntimeException("Slot unavailable. Please select another time.");
+        }
+
         // 1. Check if patient exists by email or phone
         Optional<Patient> existingPatient = patientRepository.findByEmail(request.getPatientEmail());
         if (existingPatient.isEmpty()) {

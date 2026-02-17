@@ -111,7 +111,8 @@ const BookingWidget = () => {
                 setActiveStep((prev) => prev + 1);
             })
             .catch(err => {
-                setError('Failed to book appointment. Please try again.');
+                const msg = err.response?.data || 'Failed to book appointment. Please try again.';
+                setError(msg);
                 setLoading(false);
             });
     };
@@ -177,6 +178,7 @@ const BookingWidget = () => {
             case 2:
                 return (
                     <Box component="form" sx={{ mt: 2 }}>
+                        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
                         <Grid container spacing={2}>
                             <Grid item xs={12} sm={6}>
                                 <TextField

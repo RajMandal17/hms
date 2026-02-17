@@ -94,7 +94,7 @@ export const Appointments: React.FC = () => {
         patientService.getPatients(),
       ]);
       setPatients(patientsData);
-      
+
       // Mock doctors data - in real app, you'd have a user service
       setDoctors([
         { id: 1, username: 'dr.smith', email: 'dr.smith@hospital.com', role: 'DOCTOR', firstName: 'John', lastName: 'Smith', createdAt: '' },
@@ -338,6 +338,7 @@ export const Appointments: React.FC = () => {
             {isViewing ? 'View Appointment' : isEditing ? 'Edit Appointment' : 'Schedule Appointment'}
           </DialogTitle>
           <DialogContent>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
                 <Autocomplete

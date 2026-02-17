@@ -29,4 +29,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     Page<Appointment> findByDoctorId(Long doctorId, Pageable pageable);
 
     List<Appointment> findByDoctorIdAndAppointmentDate(Long doctorId, java.time.LocalDate appointmentDate);
+
+    boolean existsByDoctorIdAndAppointmentDateAndAppointmentTime(Long doctorId, java.time.LocalDate appointmentDate,
+            java.time.LocalTime appointmentTime);
 }
