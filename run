@@ -47,7 +47,10 @@ echo "🎨 Starting frontend on port 3000..."
 cd frontend
 npm install > /dev/null 2>&1
 echo "✅ Frontend dependencies installed"
-PORT=3000 nohup npm run dev > frontend.log 2>&1 &
+echo "🏗️  Building frontend for production..."
+npm run build
+echo "✅ Frontend built successfully"
+PORT=3000 nohup npm run preview -- --host 0.0.0.0 --port 3000 > frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo "Frontend PID: $FRONTEND_PID"
 cd ..
