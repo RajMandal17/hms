@@ -47,7 +47,7 @@ echo "🎨 Starting frontend on port 3000..."
 cd frontend
 npm install > /dev/null 2>&1
 echo "✅ Frontend dependencies installed"
-PORT=3000 npm run dev &
+PORT=3000 nohup npm run dev > frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo "Frontend PID: $FRONTEND_PID"
 cd ..

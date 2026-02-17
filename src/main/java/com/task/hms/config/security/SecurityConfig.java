@@ -98,10 +98,15 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("*")
+                        .allowedOrigins(
+                                "http://localhost:3000",
+                                "http://127.0.0.1:3000",
+                                "http://51.21.160.46:3000",
+                                "http://ec2-51-21-160-46.eu-north-1.compute.amazonaws.com:3000",
+                                "http://hms.51.21.160.46.nip.io:3000")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(false);
+                        .allowCredentials(true);
             }
         };
     }
