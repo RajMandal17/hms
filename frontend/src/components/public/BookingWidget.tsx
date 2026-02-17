@@ -32,7 +32,7 @@ interface Doctor {
     specialization: string;
 }
 
-export const BookingWidget = () => {
+const BookingWidget = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
@@ -280,3 +280,5 @@ export const BookingWidget = () => {
         </Box>
     );
 };
+
+export default BookingWidget;

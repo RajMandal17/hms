@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Paper, Typography, Box } from '@mui/material';
-import { BookingWidget } from '../../components/public/BookingWidget';
+import BookingWidget from '../../components/public/BookingWidget';
 
 export const BookingPage = () => {
     return (
