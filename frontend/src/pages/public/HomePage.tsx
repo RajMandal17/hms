@@ -6,7 +6,7 @@ import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 
-const API_BASE_URL = 'http://localhost:8080/api/public';
+const API_BASE_URL = '/api/public';
 
 interface Doctor {
     id: number;

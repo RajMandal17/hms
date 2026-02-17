@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Box,
     Stepper,
@@ -21,7 +22,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs, { Dayjs } from 'dayjs';
 
-const API_BASE_URL = 'http://localhost:8080/api/public';
+const API_BASE_URL = '/api/public';
 
 const steps = ['Select Doctor', 'Select Date & Time', 'Personal Details', 'Confirmation'];
 
@@ -164,7 +165,7 @@ export const BookingWidget = () => {
                                                 onClick={() => setSelectedSlot(slot)}
                                                 size="small"
                                             >
-                                                {slot}
+                                                {slot.substring(0, 5)}
                                             </Button>
                                         </Grid>
                                     )) : <Typography>No slots available</Typography>}
@@ -227,12 +228,12 @@ export const BookingWidget = () => {
                                     Appointment Confirmed!
                                 </Typography>
                                 <Typography paragraph>
-                                    Thank you, {patientDetails.name}. Your appointment with Dr. {selectedDoctor?.name} is scheduled for {selectedDate?.format('MMMM D, YYYY')} at {selectedSlot}.
+                                    Thank you, {patientDetails.name}. Your appointment with Dr. {selectedDoctor?.name} is scheduled for {selectedDate?.format('MMMM D, YYYY')} at {selectedSlot?.substring(0, 5)}.
                                 </Typography>
                                 <Typography color="textSecondary">
                                     A confirmation email has been sent to {patientDetails.email}.
                                 </Typography>
-                                <Button variant="contained" sx={{ mt: 4 }} href="/">Back to Home</Button>
+                                <Button variant="contained" sx={{ mt: 4 }} component={Link} to="/">Back to Home</Button>
                             </>
                         ) : (
                             <Alert severity="error">{error || "Something went wrong"}</Alert>

@@ -26,7 +26,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        System.out.println("[JwtAuthFilter] Incoming request: " + request.getMethod() + " " + request.getRequestURI() + " | Content-Type: " + request.getContentType());
+        System.out.println("[JwtAuthFilter] Incoming request: " + request.getMethod() + " " + request.getRequestURI()
+                + " | Content-Type: " + request.getContentType());
         String authHeader = request.getHeader("Authorization");
         String username = null;
         String jwt = null;
@@ -41,7 +42,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                System.out.println("[JwtAuthFilter] Authenticated user: " + username + " | Authorities: " + userDetails.getAuthorities());
+                System.out.println("[JwtAuthFilter] Authenticated user: " + username + " | Authorities: "
+                        + userDetails.getAuthorities());
             }
         } else {
             System.out.println("[JwtAuthFilter] No authentication set for user: " + username);
@@ -53,26 +55,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
         String method = request.getMethod();
-        
+
         AntPathMatcher pathMatcher = new AntPathMatcher();
         if (pathMatcher.match("/api/billing/**", path) || pathMatcher.match("/api/insurance/**", path)) {
             return true;
         }
         String[] excludedPaths = {
-            "/api/auth/**",
-            "/api/users/register",
-            "/swagger-ui.html",
-            "/swagger-ui/",
-            "/swagger-ui/**",
-            "/v3/api-docs",
-            "/v3/api-docs/",
-            "/v3/api-docs/**",
-            "/api-docs",
-            "/api-docs/",
-            "/api-docs/**",
-            "/actuator/health",
-            "/actuator/**",
-            "/uploads/patient-photos/**"
+                "/api/public/**",
+                "/api/auth/**",
+                "/api/users/register",
+                "/swagger-ui.html",
+                "/swagger-ui/",
+                "/swagger-ui/**",
+                "/v3/api-docs",
+                "/v3/api-docs/",
+                "/v3/api-docs/**",
+                "/api-docs",
+                "/api-docs/",
+                "/api-docs/**",
+                "/actuator/health",
+                "/actuator/**",
+                "/uploads/patient-photos/**"
         };
         // Allow GET for OPD endpoints, but require JWT for POST/PUT/DELETE
         if (pathMatcher.match("/api/opd/**", path) && "GET".equalsIgnoreCase(method)) {

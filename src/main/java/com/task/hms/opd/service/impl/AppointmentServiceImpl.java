@@ -162,7 +162,12 @@ public class AppointmentServiceImpl implements AppointmentService {
                 " is scheduled for " + request.getAppointmentDate() + " at " + request.getAppointmentTime()
                 + ".\n\nThank you,\nHMS";
         if (email != null && email.contains("@")) {
-            notificationService.sendEmail(email, subject, text);
+            try {
+                notificationService.sendEmail(email, subject, text);
+            } catch (Exception e) {
+                System.err.println("Failed to send confirmation email: " + e.getMessage());
+                // Continue booking even if email fails
+            }
         }
 
         return appointmentRepository.save(appointment);

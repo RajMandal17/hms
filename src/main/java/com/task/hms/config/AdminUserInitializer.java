@@ -47,6 +47,19 @@ public class AdminUserInitializer {
                 userRepository.save(admin);
                 System.out.println("Default admin user created: admin / admin123");
             }
+
+            // Create doctor user
+            if (!userRepository.existsByUsername("doctor")) {
+                Role doctorRole = roleRepository.findByName(RoleType.DOCTOR)
+                        .orElseThrow(() -> new RuntimeException("DOCTOR role not found"));
+                User doctor = new User();
+                doctor.setUsername("doctor");
+                doctor.setEmail("doctor@hms.com");
+                doctor.setPassword(passwordEncoder.encode("doctor123"));
+                doctor.setRoles(Collections.singleton(doctorRole));
+                userRepository.save(doctor);
+                System.out.println("Default doctor user created: doctor / doctor123");
+            }
         };
     }
 
